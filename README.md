@@ -2,7 +2,7 @@
 This VIM plugin provides a simple, minimal, black-and-white "tabline" with some handy features. The tabline will look something like the following:
 
 ```
-··· 2|name2.ext  3|·ong_name.long_ex· 4|name4.ext ···
+··· 2|name2.ext  3|·ry_long_name.e·  4|name4.ext ···
 ```
 
 The directory name is omitted from tab name. If the file name is more than 12 characters
