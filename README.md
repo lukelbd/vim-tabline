@@ -14,9 +14,14 @@ See the source code for details.
 
 
 
-# Installation
-Install with your favorite [plugin manager](https://vi.stackexchange.com/questions/388/what-is-the-difference-between-the-vim-plugin-managers). I highly recommend the `[vim-plug](https://github.com/junegunn/vim-plug)` manager, with which you can install this plugin by adding
-```
-Plug 'lukelbd/vim-tabline'
-```
-to your `.vimrc` file.
+
+
+  # Installation
+  Install with your favorite [plugin manager](https://vi.stackexchange.com/questions/388/what-is-the-difference-between-the-vim-plugin-managers).
+  I highly recommend the [`vim-plug`](https://github.com/junegunn/vim-plug)` manager,
+  in which case you can install this plugin by adding
+  ```
+  Plug 'lukelbd/vim-tabline'
+  ```
+  to your `.vimrc`.
+  
