@@ -14,11 +14,11 @@ hi TabLineFill ctermfg=White ctermbg=Black cterm=None
 hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
 "Hijacked from Tabline function, and modified
 "Only display name of a 'primary' file, not e.g. tagbar
-if !exists('g:charmax')
-  let g:charmax=12 "maximum characters for filename
+if !exists('g:tabline_charmax')
+  let g:tabline_charmax=12 "maximum characters for filename
 endif
 if !exists('g:bufignore')
-  let g:bufignore = ['nerdtree', 'tagbar', 'codi', 'help'] "filetypes considered 'helpers'
+  let g:tabline_bufignore=['qf', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] "filetypes considered 'helpers'
 endif
 function! Tabline()
   let tabstrings = [] "put strings in list
@@ -29,7 +29,7 @@ function! Tabline()
     let tab = i + 1 "the tab number
     let buflist = tabpagebuflist(tab) "call with arg to specify number, or without to specify current tab
     for b in buflist "get the 'primary' panel in a tab, ignore 'helper' panels even if they are in focus
-      if index(g:bufignore, getbufvar(b, "&ft"))==-1 "index returns -1 if the item is not contained in the list
+      if index(g:tabline_bufignore, getbufvar(b, "&ft"))==-1 "index returns -1 if the item is not contained in the list
         let bufnr = b "we choose this as our 'primary' file for tab title
         break
       elseif b==buflist[-1] "occurs if e.g. entire tab is a help window; EXCEPTION, and use it for tab title
@@ -47,11 +47,10 @@ function! Tabline()
     let tabtext .= ' ' . tab .'' "prefer zero-indexing
     "File name or placeholder if empty
     let fname = fnamemodify(bufname, ':t')
-    if len(fname)-2 > g:charmax
-      let offset = len(fname)-g:charmax
+    if len(fname)-2 > g:tabline_charmax
+      let offset = len(fname)-g:tabline_charmax
       if offset%2==1 | let offset+=1 | endif
       let fname = '·'.fname[offset/2:len(fname)-offset/2].'·' "… use this maybe
-      " let fname = fname[:g:charmax].'·'
     endif
     let tabtext .= (bufname != '' ? '|'. fname . ' ' : '|? ')
     "Modification marker
