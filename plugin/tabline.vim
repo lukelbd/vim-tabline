@@ -17,8 +17,8 @@ hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
 if !exists('g:tabline_charmax')
   let g:tabline_charmax=12 "maximum characters for filename
 endif
-if !exists('g:bufignore')
-  let g:tabline_bufignore=['qf', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] "filetypes considered 'helpers'
+if !exists('g:tabline_bufignore')
+  let g:tabline_bufignore=['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] "filetypes considered 'helpers'
 endif
 function! Tabline()
   let tabstrings = [] "put strings in list
