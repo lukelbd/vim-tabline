@@ -36,7 +36,7 @@ function! Tabline()
         let bufnr = b
       endif
     endfor
-    if tab==tabpagenr()
+    if tab == tabpagenr()
       let g:bufmain = bufnr
     endif
     let bufname = bufname(bufnr) " actual name
@@ -49,7 +49,7 @@ function! Tabline()
     let fname = fnamemodify(bufname, ':t')
     if len(fname)-2 > g:tabline_charmax
       let offset = len(fname)-g:tabline_charmax
-      if offset%2==1 | let offset += 1 | endif
+      if offset%2 == 1 | let offset += 1 | endif
       let fname = '·'.fname[offset/2:len(fname)-offset/2].'·' " … use this maybe
     endif
     let tabtext .= (bufname != '' ? '|'. fname . ' ' : '|? ')
