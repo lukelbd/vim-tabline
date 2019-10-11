@@ -15,10 +15,10 @@ hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
 "Hijacked from Tabline function, and modified
 "Only display name of a 'primary' file, not e.g. tagbar
 if !exists('g:tabline_charmax')
-  let g:tabline_charmax=12 "maximum characters for filename
+  let g:tabline_charmax = 12 "maximum characters for filename
 endif
 if !exists('g:tabline_bufignore')
-  let g:tabline_bufignore=['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] "filetypes considered 'helpers'
+  let g:tabline_bufignore = ['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] "filetypes considered 'helpers'
 endif
 function! Tabline()
   let tabstrings = [] "put strings in list
@@ -37,7 +37,7 @@ function! Tabline()
       endif
     endfor
     if tab==tabpagenr()
-      let g:bufmain=bufnr
+      let g:bufmain = bufnr
     endif
     let bufname = bufname(bufnr) "actual name
     let bufmodified = getbufvar(bufnr, "&mod")
@@ -49,7 +49,7 @@ function! Tabline()
     let fname = fnamemodify(bufname, ':t')
     if len(fname)-2 > g:tabline_charmax
       let offset = len(fname)-g:tabline_charmax
-      if offset%2==1 | let offset+=1 | endif
+      if offset%2==1 | let offset += 1 | endif
       let fname = '·'.fname[offset/2:len(fname)-offset/2].'·' "… use this maybe
     endif
     let tabtext .= (bufname != '' ? '|'. fname . ' ' : '|? ')
