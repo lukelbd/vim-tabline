@@ -18,7 +18,7 @@ if !exists('g:tabline_charmax')
   let g:tabline_charmax = 12 " maximum characters for filename
 endif
 if !exists('g:tabline_bufignore')
-  let g:tabline_bufignore = ['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi'] " filetypes considered 'helpers'
+  let g:tabline_bufignore = ['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi']
 endif
 function! Tabline()
   let tabstrings = [] " put strings in list
