@@ -6,12 +6,6 @@
 " content and syntax coloring in the *document*, and accounts for long
 " filenames and many open tabs.
 "------------------------------------------------------------------------------
-" Change highlghting groups; Tabline formats tab names better
-set showtabline=1
-  " always show, even if 1 file
-hi TabLine     ctermfg=White ctermbg=Black cterm=None
-hi TabLineFill ctermfg=White ctermbg=Black cterm=None
-hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
 " Hijacked from Tabline function, and modified
 " Only display name of a 'primary' file, not e.g. tagbar
 if !exists('g:tabline_charmax')
@@ -21,9 +15,10 @@ if !exists('g:tabline_bufignore')
   let g:tabline_bufignore = ['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi']
 endif
 function! Tabline()
+  " Iterate through tabs
   let tabstrings = [] " put strings in list
   let tabtexts = [] " actual text on screen
-  for i in range(tabpagenr('$')) " iterate through each tab
+  for i in range(tabpagenr('$'))
     let tabstring = '' " initialize string
     let tabtext = ''
     let tab = i + 1 " the tab number
@@ -61,6 +56,7 @@ function! Tabline()
     let tabstrings += [tabstring . tabtext]
     let tabtexts += [tabtext]
   endfor
+
   " Finally modify if too long
   " See :help non-greedy for explanation of the \{-} params; indicate trying
   " to match as few as possible; remember not to use double quotes here!
@@ -85,5 +81,10 @@ function! Tabline()
   " Return final version
   return prefix . join(tabstrings,'') . suffix . '%#TabLineFill#'
 endfunction
-set tabline=%!Tabline()
+
+" Settings and highlight groups
+set showtabline=1 tabline=%!Tabline()
+hi TabLine     ctermfg=White ctermbg=Black cterm=None
+hi TabLineFill ctermfg=White ctermbg=Black cterm=None
+hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
 
