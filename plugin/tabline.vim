@@ -9,6 +9,7 @@
 " Autocommand
 augroup shell_changed
   au!
+  au InsertLeave,TextChanged * checktime
   au FileChangedShellPost * let b:file_changed_shell = 1
   au BufWritePost,BufReadPost * unlet! b:file_changed_shell
 augroup END
