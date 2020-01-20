@@ -7,7 +7,7 @@ This vim plugin provides a simple black-and-white "tabline" with some handy feat
 
 * The directory is always omitted from the tab title.
 * The tab title is always derived the "main file", i.e. the first window in the tab that does not belong to a filetype in the `g:tabline_ftignore` list. The default ignore list is `['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi']`.
-* If the file name is more than `g:tabline_charmax` characters long (the default is `12`), the ends of the tab title are truncated and replaced with `·`.
+* If the file name is more than `g:tabline_charmax` characters long, the ends of the tab title are truncated and replaced with `·`. The default is `12`.
 * If there are too many tabs open for the window width, the leading and trailing tab titles
 surrounding the *current* tab are truncated and replaced with `···`.
 * If the buffer has been modified, a ``[+]`` is appended to the tab title.
