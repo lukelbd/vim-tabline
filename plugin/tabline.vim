@@ -7,14 +7,16 @@
 " filenames and many open tabs.
 "------------------------------------------------------------------------------
 " Autocommand
-" WARNING: For some reason checktime % does not trigger autocmd but
+" Warning: For some reason checktime % does not trigger autocmd but
 " checktime without arguments does.
+" Warning: For some reason FileChangedShellPost causes warning message to
+" be shown even with silent! checktime, but FileChangedShell does not.
 scriptencoding utf-8
 augroup shell_changed
   au!
   au BufReadPost,BufWritePost,BufNewFile * let b:file_changed_shell = 0
   au InsertLeave,TextChanged * silent! checktime
-  au FileChangedShellPost * let b:file_changed_shell = 1
+  au FileChangedShell * let b:file_changed_shell = 1
 augroup END
 
 " Autoload functions
