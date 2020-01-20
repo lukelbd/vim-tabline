@@ -7,21 +7,31 @@
 " filenames and many open tabs.
 "------------------------------------------------------------------------------
 " Autocommand
+" WARNING: For some reason checktime % does not trigger autocmd but
+" checktime without arguments does.
+scriptencoding utf-8
 augroup shell_changed
   au!
-  au InsertLeave,TextChanged * checktime %
+  au BufReadPost,BufWritePost,BufNewFile * let b:file_changed_shell = 0
+  au InsertLeave,TextChanged * silent! checktime
   au FileChangedShellPost * let b:file_changed_shell = 1
-  au BufWritePost,BufReadPost * unlet! b:file_changed_shell
 augroup END
 
+" Autoload functions
+command! -nargs=0 SmartWrite call tabline#smart_write()
+
+" Default settings
+if ! exists('g:tabline_charmax')
+  let g:tabline_charmax = 12  " maximum characters for filename
+endif
+if ! exists('g:tabline_ftignore')
+  let g:tabline_ftignore = [
+    \ 'qf', 'vim-plug', 'help', 'diff', 'man',
+    \ 'fugitive', 'nerdtree', 'tagbar', 'codi'
+    \ ]
+endif
+
 " Hijacked from Tabline function, and modified
-" Only display name of a 'primary' file, not e.g. tagbar
-if !exists('g:tabline_charmax')
-  let g:tabline_charmax = 12 " maximum characters for filename
-endif
-if !exists('g:tabline_ftignore')
-  let g:tabline_ftignore = ['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi']
-endif
 function! Tabline()
   " Iterate through tabs
   let tabstrings = []  " put strings in list
