@@ -28,8 +28,9 @@ if ! exists('g:tabline_charmax')
 endif
 if ! exists('g:tabline_ftignore')
   let g:tabline_ftignore = [
-    \ 'qf', 'vim-plug', 'help', 'diff', 'man',
-    \ 'fugitive', 'nerdtree', 'tagbar', 'codi'
+    \ 'qf', 'help', 'diff', 'man',
+    \ 'vim-plug', 'fugitive', 'futitiveblame',
+    \ 'nerdtree', 'tagbar', 'codi'
     \ ]
 endif
 
