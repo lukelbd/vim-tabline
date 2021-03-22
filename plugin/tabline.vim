@@ -50,7 +50,7 @@ function! Tabline()
     let tab = i + 1
     let buflist = tabpagebuflist(tab)
     for b in buflist
-      if index(g:tabline_ftignore, getbufvar(b, '&ft')) == -1
+      if index(g:tabline_filetypes_ignore, getbufvar(b, '&ft')) == -1
         let bufnr = b  " the 'primary' panel
         break
       elseif b == buflist[-1]  " e.g. entire tab is a help window
@@ -69,8 +69,8 @@ function! Tabline()
 
     " File name or placeholder if empty
     let fname = fnamemodify(bufname, ':t')
-    if len(fname) - 2 > g:tabline_charmax
-      let offset = len(fname) - g:tabline_charmax
+    if len(fname) - 2 > g:tabline_maxlength
+      let offset = len(fname) - g:tabline_maxlength
       if offset % 2 == 1 | let offset += 1 | endif
       let fname = '·'.fname[offset/2:len(fname)-offset/2].'·'  " … use this maybe
     endif
