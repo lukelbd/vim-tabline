@@ -1,24 +1,23 @@
 Tabline
 =======
 
-This vim plugin provides a simple black-and-white "tabline" that looks something
+Vim plugin providing a simple black-and-white "tabline" that looks something
 like this:
 
 ```
-··· 2|name2.ext  3|·ry_long_name.e·  4|name4.ext ···
+··· 2|file2.ext [+]  3|file3.ext  4|·ry_long_file_name.e· [!]  5|file5.ext ···
 ```
 
 Each tab title is determined as follows:
 
 * The "main" file name is always used, i.e. the first window in the tab
-  whose filetype is not present in the `g:tabline_ftignore` list (defaults to
-  `['qf', 'vim-plug', 'help', 'diff', 'man', 'fugitive', 'nerdtree', 'tagbar', 'codi']`).
-  The file directory is always omitted.
-* If the file name is more than `g:tabline_charmax` characters long (defaults to `12`),
-  the ends of the title are truncated and replaced with `·`.
+  whose filetype is not present in `g:tabline_filetypes_ignore`
+  (defaults to `['diff', 'help', 'man', 'qf']`). The file directory is always omitted.
+* If the file name has more than `g:tabline_maxlength` characters
+  (defaults to `12`), the ends of the title are truncated and replaced with `·`.
 * If the "main" buffer has been modified since the file was last saved, a `[+]` is
-  appended to the tab title.
-* If the "main" file has changed on the disk since it was last loaded into the buffer,
+  appended to the tab title (similar to the default behavior).
+* If the "main" file was changed on the disk since it was last loaded into the buffer,
   a `[!]` is appended to the tab title.
 * If there are too many tabs open for the window width, the leading and trailing tab
   titles surrounding the *current* tab are truncated and replaced with `···`.

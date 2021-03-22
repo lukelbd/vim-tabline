@@ -22,16 +22,20 @@ augroup END
 " Autoload functions
 command! -nargs=0 SmartWrite call tabline#smart_write()
 
-" Default settings
-if ! exists('g:tabline_charmax')
-  let g:tabline_charmax = 12  " maximum characters for filename
+" Deprecated
+if exists('g:tabline_charmax')
+  let g:tabline_maxlength = g:tabline_charmax
 endif
-if ! exists('g:tabline_ftignore')
-  let g:tabline_ftignore = [
-    \ 'qf', 'help', 'diff', 'man',
-    \ 'vim-plug', 'fugitive', 'futitiveblame',
-    \ 'nerdtree', 'tagbar', 'codi'
-    \ ]
+if exists('g:tabline_ftignore')
+  let g:tabline_filetypes_ignore = g:tabline_ftignore
+endif
+
+" Default settings
+if !exists('g:tabline_maxlength')
+  let g:tabline_maxlength = 12
+endif
+if !exists('g:tabline_filetypes_ignore')
+  let g:tabline_filetypes_ignore = ['diff', 'help', 'man', 'qf']
 endif
 
 " Hijacked from Tabline function, and modified
@@ -56,19 +60,19 @@ function! Tabline()
     if tab == tabpagenr()
       let g:bufmain = bufnr
     endif
-    let bufname = bufname(bufnr) " actual name
+    let bufname = bufname(bufnr)
 
     " Start the tab string
-    let tabstring .= '%' . tab . 'T' " start 'tab' here; denotes edges of highlight groups and clickable area
-    let tabstring .= (tab == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#') " the # encodes string with either highlight group
-    let tabtext .= ' ' . tab . '' " prefer zero-indexing
+    let tabstring .= '%' . tab . 'T'  " start 'tab' here; denotes edges of highlight groups and clickable area
+    let tabstring .= (tab == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#')  " the # encodes string with either highlight group
+    let tabtext .= ' ' . tab . ''  " prefer zero-indexing
 
     " File name or placeholder if empty
     let fname = fnamemodify(bufname, ':t')
     if len(fname) - 2 > g:tabline_charmax
       let offset = len(fname) - g:tabline_charmax
       if offset % 2 == 1 | let offset += 1 | endif
-      let fname = '·'.fname[offset/2:len(fname)-offset/2].'·' " … use this maybe
+      let fname = '·'.fname[offset/2:len(fname)-offset/2].'·'  " … use this maybe
     endif
     let tabtext .= (bufname !=# '' ? '|'. fname . ' ' : '|? ')
 
@@ -92,20 +96,20 @@ function! Tabline()
   " Modify if too long
   let prefix = ''
   let suffix = ''
-  let tabstart = 1 " will modify this as delete tabs
-  let tabend = tabpagenr('$') " same
-  let tabpage = tabpagenr() " continually test position relative to tabstart/tabend
-  while len(join(tabtexts, '')) + len(prefix) + len(suffix) > &columns " replace leading/trailing tabs with dots in meantime
-    if tabend-tabpage > tabpage-tabstart " VIM lists are zero-indexed, end-inclusive
+  let tabstart = 1  " will modify this as delete tabs
+  let tabend = tabpagenr('$')  " same
+  let tabpage = tabpagenr()  " continually test position relative to tabstart/tabend
+  while len(join(tabtexts, '')) + len(prefix) + len(suffix) > &columns  " replace leading/trailing tabs with dots in meantime
+    if tabend-tabpage > tabpage-tabstart  " vim lists are zero-indexed, end-inclusive
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
       let suffix = '···'
-      let tabend -= 1 " decrement; have blotted out one tab on right
+      let tabend -= 1  " decrement; have blotted out one tab on right
     else
       let tabstrings = tabstrings[1:]
       let tabtexts = tabtexts[1:]
       let prefix = '···'
-      let tabstart += 1 " increment; have blotted out one tab on left
+      let tabstart += 1  " increment; have blotted out one tab on left
     endif
   endwhile
 
@@ -118,4 +122,3 @@ set showtabline=1 tabline=%!Tabline()
 hi TabLine     ctermfg=White ctermbg=Black cterm=None
 hi TabLineFill ctermfg=White ctermbg=Black cterm=None
 hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
-
