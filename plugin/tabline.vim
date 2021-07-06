@@ -14,8 +14,8 @@
 scriptencoding utf-8
 augroup shell_changed
   au!
+  au BufEnter,InsertEnter,TextChanged * silent! checktime
   au BufReadPost,BufWritePost,BufNewFile * let b:file_changed_shell = 0
-  au InsertEnter,TextChanged * silent! checktime
   au FileChangedShell * call setbufvar(expand('<afile>'), 'file_changed_shell', 1)
 augroup END
 
