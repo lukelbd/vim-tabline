@@ -77,7 +77,7 @@ function! Tabline()
     let tabtext .= (bufname !=# '' ? '|'. fname . ' ' : '|? ')
 
     " Modification marker
-    let modified = getbufvar(bufnr, '&mod')
+    let modified = getbufvar(bufnr, '&modified')
     if modified
       let tabtext .= '[+] '
     endif
