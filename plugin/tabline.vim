@@ -15,8 +15,8 @@ scriptencoding utf-8
 augroup shell_changed
   au!
   au BufEnter,InsertEnter,TextChanged * silent! checktime
-  au BufReadPost,BufWritePost,BufNewFile * let b:file_changed_shell = 0
-  au FileChangedShell * call setbufvar(expand('<afile>'), 'file_changed_shell', 1)
+  au BufReadPost,BufWritePost,BufNewFile * let b:tabline_filechanged = 0
+  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_filechanged', 1)
 augroup END
 
 " Autoload functions
@@ -77,14 +77,14 @@ function! Tabline()
     let tabtext .= (bufname !=# '' ? '|'. fname . ' ' : '|? ')
 
     " Modification marker
-    let bufmodified = getbufvar(bufnr, '&mod')
-    if bufmodified
+    let modified = getbufvar(bufnr, '&mod')
+    if modified
       let tabtext .= '[+] '
     endif
 
     " Modified on disk
-    let changed = getbufvar(bufnr, 'file_changed_shell')
-    if type(changed) == 0 && changed  " exists and is 1
+    let changed = getbufvar(bufnr, 'tabline_filechanged', 0)
+    if changed  " exists and is 1
       let tabtext .= '[!] '
     endif
 
