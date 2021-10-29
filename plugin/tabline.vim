@@ -88,6 +88,17 @@ function! Tabline()
       let tabtext .= '[!] '
     endif
 
+    " Emit warning
+    let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)  " returns empty if unset
+    if !changed || !modified
+      call setbufvar(bufnr, 'tabline_warnchanged', 0)  " prime for next time both are set
+    elseif !warned
+      echohl WarningMsg
+      echo 'Warning: Modifying buffer that was changed on disk.'
+      echohl None
+      call setbufvar(bufnr, 'tabline_warnchanged', 1)
+    endif
+
     " Add stuff to lists
     let tabstrings += [tabstring . tabtext]
     let tabtexts += [tabtext]
