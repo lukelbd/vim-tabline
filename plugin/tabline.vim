@@ -12,7 +12,7 @@
 " Warning: For some reason FileChangedShellPost causes warning message to
 " be shown even with silent! checktime, but FileChangedShell does not.
 scriptencoding utf-8
-augroup shell_changed
+augroup tabline_filechanged
   au!
   au BufEnter,InsertEnter,TextChanged * silent! checktime
   au BufReadPost,BufWritePost,BufNewFile * let b:tabline_filechanged = 0
