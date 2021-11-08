@@ -20,7 +20,7 @@ augroup tabline_filechanged
 augroup END
 
 " Autoload functions
-command! -nargs=0 SmartWrite call tabline#smart_write()
+command! -nargs=0 TablineWrite call tabline#write()
 
 " Deprecated
 if exists('g:tabline_charmax')
