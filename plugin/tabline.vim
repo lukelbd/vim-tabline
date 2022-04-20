@@ -27,15 +27,15 @@ if exists('g:tabline_charmax')
   let g:tabline_maxlength = g:tabline_charmax
 endif
 if exists('g:tabline_ftignore')
-  let g:tabline_filetypes_ignore = g:tabline_ftignore
+  let g:tabline_skip_filetypes = g:tabline_ftignore
 endif
 
 " Default settings
 if !exists('g:tabline_maxlength')
   let g:tabline_maxlength = 12
 endif
-if !exists('g:tabline_filetypes_ignore')
-  let g:tabline_filetypes_ignore = ['diff', 'help', 'man', 'qf']
+if !exists('g:tabline_skip_filetypes')
+  let g:tabline_skip_filetypes = ['diff', 'help', 'man', 'qf']
 endif
 
 " Hijacked from Tabline function, and modified
@@ -50,7 +50,7 @@ function! Tabline()
     let tab = i + 1
     let buflist = tabpagebuflist(tab)
     for b in buflist
-      if index(g:tabline_filetypes_ignore, getbufvar(b, '&ft')) == -1
+      if index(g:tabline_skip_filetypes, getbufvar(b, '&ft')) == -1
         let bufnr = b  " the 'primary' panel
         break
       elseif b == buflist[-1]  " e.g. entire tab is a help window

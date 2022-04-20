@@ -11,7 +11,7 @@ like this:
 Each tab title is determined as follows:
 
 * The "main" file name is always used, i.e. the first window in the tab
-  whose filetype is not present in `g:tabline_filetypes_ignore`
+  whose filetype is not present in `g:tabline_skip_filetypes`
   (defaults to `['diff', 'help', 'man', 'qf']`). The file directory is always omitted.
 * If the file name has more than `g:tabline_maxlength` characters
   (defaults to `12`), the ends of the title are truncated and replaced with `·`.
