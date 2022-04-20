@@ -129,7 +129,8 @@ function! Tabline()
 endfunction
 
 " Settings and highlight groups
-set showtabline=1 tabline=%!Tabline()
+set tabline=%!Tabline()
+let &showtabline = &showtabline ? &showtabline : 1
 hi TabLine     ctermfg=White ctermbg=Black cterm=None
 hi TabLineFill ctermfg=White ctermbg=Black cterm=None
 hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
