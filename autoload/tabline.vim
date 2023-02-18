@@ -1,6 +1,6 @@
-"-----------------------------------------------------------------------------"
+"-----------------------------------------------------------------------------
 " Related command for saving the file
-"-----------------------------------------------------------------------------"
+"-----------------------------------------------------------------------------
 " Note: If the file is unmodified :update should do nothing
 " Note: Prevents vim bug where cancelling the save in the confirmation
 " prompt still triggers BufWritePost and resets b:file_changed_shell.
