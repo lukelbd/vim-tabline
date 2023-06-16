@@ -40,6 +40,11 @@ endif
 
 " Hijacked from Tabline function, and modified
 function! Tabline()
+  " Enforce colors
+  highlight TabLine ctermfg=White ctermbg=Black cterm=None
+  highlight TabLineFill ctermfg=White ctermbg=Black cterm=None
+  highlight TabLineSel ctermfg=Black ctermbg=White cterm=None
+
   " Iterate through tabs
   let tabstrings = []  " put strings in list
   let tabtexts = []  " actual text on screen
@@ -131,6 +136,3 @@ endfunction
 " Settings and highlight groups
 set tabline=%!Tabline()
 let &showtabline = &showtabline ? &showtabline : 1
-hi TabLine     ctermfg=White ctermbg=Black cterm=None
-hi TabLineFill ctermfg=White ctermbg=Black cterm=None
-hi TabLineSel  ctermfg=Black ctermbg=White cterm=None
