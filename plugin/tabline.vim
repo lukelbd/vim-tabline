@@ -2,9 +2,8 @@
 " Name:   tabline.vim
 " Author: Luke Davis (lukelbd@gmail.com)
 " Date:   2018-09-03
-" A simple, minimal, black-and-white tabline that helps keep focus on the
-" content and syntax coloring in the *document*, and accounts for long
-" filenames and many open tabs.
+" A simple, minimal, black-and-white tabline that helps keep focus on the content
+" in each window and accounts for long filenames and many open tabs.
 "------------------------------------------------------------------------------
 " Autocommand
 " Warning: For some reason checktime % does not trigger autocmd but
