@@ -63,7 +63,7 @@ function! Tabline()
     let bufname = bufname(bufnr)
     let fname = fnamemodify(bufname, ':t')
     if empty(fname)
-      let fname = getbufvar(bufname, '&filetype', '')
+      let fname = getbufvar(bufnr, '&filetype', '')
     endif
     if len(fname) - 2 > g:tabline_maxlength
       let offset = len(fname) - g:tabline_maxlength
