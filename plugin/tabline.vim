@@ -45,13 +45,15 @@ function! Tabline()
   let tabstrings = []  " tabline string
   let tabtexts = []  " displayed text
   for idx in range(tabpagenr('$'))
-    " Get primary panel in tab, ignoring popups
+    " Get primary panel in tab ignoring popups
     let tnr = idx + 1
-    let buflist = tabpagebuflist(tnr)
+    let filt = "bufname(v:val)[0] !=# '!'"  " always ignore fzf complete windows
+    let buflist = filter(tabpagebuflist(tnr), filt)
+    let buflist = empty(buflist) ? tabpagebuflist(tnr) : buflist  " fall-back
+    let tabtext = ' ' . tnr . ''
     let tabstring = '%' . tnr . 'T'  " edges of highlight groups and clickable area
     let tabstring .= tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
-    let tabtext = ' ' . tnr . ''  " prefer zero-indexing
-    for bufnr in tabpagebuflist(tnr)
+    for bufnr in buflist
       if index(g:tabline_skip_filetypes, getbufvar(bufnr, '&ft')) == -1
         break  " use this as 'primary' or else use the final one
       endif
@@ -79,8 +81,8 @@ function! Tabline()
     if changed
       let tabtext .= '[!] '
     endif
-    let tabstrings += [tabstring . tabtext]
     let tabtexts += [tabtext]
+    let tabstrings += [tabstring . tabtext]
 
     " Emit warning
     let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)
