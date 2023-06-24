@@ -37,98 +37,82 @@ if !exists('g:tabline_skip_filetypes')
   let g:tabline_skip_filetypes = ['diff', 'help', 'man', 'qf']
 endif
 
-" Hijacked from Tabline function, and modified
+" Main function
 function! Tabline()
-  " Enforce colors
   highlight TabLine ctermfg=White ctermbg=Black cterm=None
   highlight TabLineFill ctermfg=White ctermbg=Black cterm=None
   highlight TabLineSel ctermfg=Black ctermbg=White cterm=None
-
-  " Iterate through tabs
-  let tabstrings = []  " put strings in list
-  let tabtexts = []  " actual text on screen
-  for i in range(tabpagenr('$'))
-    " Get 'primary' panel in tab, ignore 'helper' panels even if they are in focus
-    let tabstring = ''
-    let tabtext = ''
-    let tab = i + 1
-    let buflist = tabpagebuflist(tab)
-    for b in buflist
-      if index(g:tabline_skip_filetypes, getbufvar(b, '&ft')) == -1
-        let bufnr = b  " the 'primary' panel
-        break
-      elseif b == buflist[-1]  " e.g. entire tab is a help window
-        let bufnr = b
+  let tabstrings = []  " tabline string
+  let tabtexts = []  " displayed text
+  for idx in range(tabpagenr('$'))
+    " Get primary panel in tab, ignoring popups
+    let tnr = idx + 1
+    let buflist = tabpagebuflist(tnr)
+    let tabstring = '%' . tnr . 'T'  " edges of highlight groups and clickable area
+    let tabstring .= tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
+    let tabtext = ' ' . tnr . ''  " prefer zero-indexing
+    for bufnr in tabpagebuflist(tnr)
+      if index(g:tabline_skip_filetypes, getbufvar(bufnr, '&ft')) == -1
+        break  " use this as 'primary' or else use the final one
       endif
     endfor
-    if tab == tabpagenr()
-      let g:bufmain = bufnr
-    endif
+
+    " Create the tab with an updated file
     let bufname = bufname(bufnr)
-
-    " Start the tab string
-    let tabstring .= '%' . tab . 'T'  " start 'tab' here; denotes edges of highlight groups and clickable area
-    let tabstring .= (tab == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#')  " the # encodes string with either highlight group
-    let tabtext .= ' ' . tab . ''  " prefer zero-indexing
-
-    " File name or placeholder if empty
     let fname = fnamemodify(bufname, ':t')
+    if empty(fname)
+      let fname = getbufvar(bufname, '&filetype', '')
+    endif
     if len(fname) - 2 > g:tabline_maxlength
       let offset = len(fname) - g:tabline_maxlength
-      if offset % 2 == 1 | let offset += 1 | endif
-      let fname = '·'.fname[offset/2:len(fname)-offset/2].'·'  " … use this maybe
+      let offset += (offset % 2 == 1)
+      let fname = '·' . fname[offset / 2: len(fname) - offset / 2] . '·'
     endif
-    let tabtext .= (bufname !=# '' ? '|'. fname . ' ' : '|? ')
+    let tabtext .= empty(fname) ? '|? ' : '|' . fname . ' '
 
-    " Modification marker
+    " Add markers and update lists
     let modified = getbufvar(bufnr, '&modified')
     if modified
       let tabtext .= '[+] '
     endif
-
-    " Modified on disk
     let changed = getbufvar(bufnr, 'tabline_filechanged', 0)
-    if changed  " exists and is 1
+    if changed
       let tabtext .= '[!] '
     endif
+    let tabstrings += [tabstring . tabtext]
+    let tabtexts += [tabtext]
 
     " Emit warning
-    let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)  " returns empty if unset
+    let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)
     if !changed || !modified
-      call setbufvar(bufnr, 'tabline_warnchanged', 0)  " prime for next time both are set
+      call setbufvar(bufnr, 'tabline_warnchanged', 0)
     elseif !warned
       echohl WarningMsg
       echo 'Warning: Modifying buffer that was changed on disk.'
       echohl None
       call setbufvar(bufnr, 'tabline_warnchanged', 1)
     endif
-
-    " Add stuff to lists
-    let tabstrings += [tabstring . tabtext]
-    let tabtexts += [tabtext]
   endfor
 
-  " Modify if too long
+  " Truncate if too long
   let prefix = ''
   let suffix = ''
-  let tabstart = 1  " will modify this as delete tabs
-  let tabend = tabpagenr('$')  " same
-  let tabpage = tabpagenr()  " continually test position relative to tabstart/tabend
-  while len(join(tabtexts, '')) + len(prefix) + len(suffix) > &columns  " replace leading/trailing tabs with dots in meantime
-    if tabend-tabpage > tabpage-tabstart  " vim lists are zero-indexed, end-inclusive
+  let tabstart = 1  " first tab shown
+  let tabend = tabpagenr('$')  " last tab shown
+  let tabpage = tabpagenr()
+  while len(join(tabtexts, '')) + len(prefix) + len(suffix) > &columns
+    if tabend - tabpage > tabpage - tabstart
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
       let suffix = '···'
-      let tabend -= 1  " decrement; have blotted out one tab on right
+      let tabend -= 1  " decrement, have blotted out one tab on right
     else
       let tabstrings = tabstrings[1:]
       let tabtexts = tabtexts[1:]
       let prefix = '···'
-      let tabstart += 1  " increment; have blotted out one tab on left
+      let tabstart += 1  " increment, have blotted out one tab on left
     endif
   endwhile
-
-  " Return final version
   return prefix . join(tabstrings,'') . suffix . '%#TabLineFill#'
 endfunction
 
