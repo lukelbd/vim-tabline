@@ -37,11 +37,28 @@ if !exists('g:tabline_skip_filetypes')
   let g:tabline_skip_filetypes = ['diff', 'help', 'man', 'qf']
 endif
 
-" Main function
+" Get automatic tabline colors
+" Note: This is needed for GUI vim color schemes since they do not use cterm codes.
+" Also some schemes use named colors so have to convert into hex by appending '#'.
+" See: https://stackoverflow.com/a/27870856/4970632
+" See: https://vi.stackexchange.com/a/20757/8084
+function! s:default_color(code, ...) abort
+  let hex = synIDattr(hlID('Normal'), a:code . '#')
+  if empty(hex) || hex[0] !=# '#' | return | endif  " unexpected output
+  let shade = a:0 ? a:1 ? 0.3 : 0.0 : 0.0  " shade toward neutral gray
+  let color = '#'  " default hex color
+  for idx in range(1, 5, 2)
+    " vint: -ProhibitUsingUndeclaredVariable
+    let value = str2nr(hex[idx:idx + 1], 16)
+    let value = value - shade * (value - 128)
+    let color .= printf('%02x', float2nr(value))
+  endfor
+  return color
+endfunction
+
+
+" Generate tabline text
 function! Tabline()
-  highlight TabLine ctermfg=White ctermbg=Black cterm=None
-  highlight TabLineFill ctermfg=White ctermbg=Black cterm=None
-  highlight TabLineSel ctermfg=Black ctermbg=White cterm=None
   let tabstrings = []  " tabline string
   let tabtexts = []  " displayed text
   for idx in range(tabpagenr('$'))
@@ -115,6 +132,15 @@ function! Tabline()
       let tabstart += 1  " increment, have blotted out one tab on left
     endif
   endwhile
+
+  " Apply syntax colors and return string
+  let s = has('gui_running') ? 'gui' : 'cterm'
+  let flag = has('gui_running') ? '#be0119' : 'Red'  " copied from xkcd scarlet
+  let black = has('gui_running') ? s:default_color('bg', 1) : 'Black'
+  let white = has('gui_running') ? s:default_color('fg', 0) : 'White'
+  exe 'highlight TabLine ' . s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
+  exe 'highlight TabLineFill ' . s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
+  exe 'highlight TabLineSel ' . s . 'fg=' . black . ' ' . s . 'bg=' . white . ' ' . s . '=None'
   return prefix . join(tabstrings,'') . suffix . '%#TabLineFill#'
 endfunction
 
