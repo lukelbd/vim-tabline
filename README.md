@@ -22,12 +22,6 @@ Each tab title is determined as follows:
 * If there are too many tabs open for the window width, the leading and trailing tab
   titles surrounding the *current* tab are truncated and replaced with `···`.
 
-This plugin also defines a `:TablineWrite` command that can be used to write files
-instead of `:write`. The `:TablineWrite` command prevents writing to disk if the buffer
-was not changed. It also fixes a vim bug where if you *reject* saving a file that was
-modified on disk, the `BufWritePost` autocommand is still triggered and the `[!]` goes
-away, even though the changes were not loaded or overwritten.
-
 Installation
 ============
 

@@ -18,9 +18,6 @@ augroup tabline_filechanged
   au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_filechanged', 1)
 augroup END
 
-" Autoload functions
-command! -nargs=0 TablineWrite call tabline#write()
-
 " Deprecated
 if exists('g:tabline_charmax')
   let g:tabline_maxlength = g:tabline_charmax
@@ -61,9 +58,8 @@ endfunction
 function! Tabline()
   let tabstrings = []  " tabline string
   let tabtexts = []  " displayed text
-  for idx in range(tabpagenr('$'))
+  for tnr in range(1, tabpagenr('$'))
     " Get primary panel in tab ignoring popups
-    let tnr = idx + 1
     let filt = "bufname(v:val)[0] !=# '!'"  " always ignore fzf complete windows
     let buflist = filter(tabpagebuflist(tnr), filt)
     let buflist = empty(buflist) ? tabpagebuflist(tnr) : buflist  " fall-back
