@@ -12,9 +12,9 @@ Each tab title is determined as follows:
 
 * The "main" file name is always used, i.e. the first window in the tab
   whose filetype is not present in `g:tabline_skip_filetypes`
-  (defaults to `['diff', 'help', 'man', 'qf']`). The file directory is always omitted.
+  (default `['diff', 'help', 'man', 'qf']`). The directory is always omitted.
 * If the file name has more than `g:tabline_maxlength` characters
-  (defaults to `12`), the ends of the title are truncated and replaced with `·`.
+  (default `12`), the ends of the title are truncated and replaced with `·`.
 * If the "main" buffer has been modified since the file was last saved, a `[+]` is
   appended to the tab title (similar to the default behavior).
 * If the "main" file was changed on the disk since it was last loaded into the buffer,
