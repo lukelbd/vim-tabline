@@ -1,5 +1,4 @@
 "------------------------------------------------------------------------------
-" Name:   tabline.vim
 " Author: Luke Davis (lukelbd@gmail.com)
 " Date:   2018-09-03
 " A simple, minimal, black-and-white tabline that helps keep focus on the content
