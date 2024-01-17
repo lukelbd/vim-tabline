@@ -66,23 +66,24 @@ function! Tabline()
     let tabstring = '%' . tnr . 'T'  " edges of highlight groups and clickable area
     let tabstring .= tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
     for bufnr in buflist
-      if index(g:tabline_skip_filetypes, getbufvar(bufnr, '&ft')) == -1
+      let path = expand('#' . bufnr . ':p')
+      let type = getbufvar(bufnr, '&filetype')
+      if index(g:tabline_skip_filetypes, type) == -1
         break  " use this as 'primary' or else use the final one
       endif
     endfor
 
     " Create the tab with an updated file
-    let bufname = bufname(bufnr)
-    let fname = fnamemodify(bufname, ':t')
-    if empty(fname)
-      let fname = getbufvar(bufnr, '&filetype', '')
+    let path = fnamemodify(path, ':t')
+    if empty(path)
+      let path = getbufvar(bufnr, '&filetype', '')
     endif
-    if len(fname) - 2 > g:tabline_maxlength
-      let offset = len(fname) - g:tabline_maxlength
+    if len(path) - 2 > g:tabline_maxlength
+      let offset = len(path) - g:tabline_maxlength
       let offset += (offset % 2 == 1)
-      let fname = '·' . fname[offset / 2: len(fname) - offset / 2] . '·'
+      let path = '·' . path[offset / 2: len(path) - offset / 2] . '·'
     endif
-    let tabtext .= empty(fname) ? '|? ' : '|' . fname . ' '
+    let tabtext .= empty(path) ? '|? ' : '|' . path . ' '
 
     " Add markers and update lists
     let modified = getbufvar(bufnr, '&modified')
