@@ -57,6 +57,7 @@ endfunction
 function! Tabline()
   let tabstrings = []  " tabline string
   let tabtexts = []  " displayed text
+  let tablast = tabpagenr('#')
   for tnr in range(1, tabpagenr('$'))
     " Get primary panel in tab ignoring popups
     let filt = "bufname(v:val)[0] !=# '!'"  " always ignore fzf complete windows
@@ -76,9 +77,7 @@ function! Tabline()
     " Create the tab with an updated file
     let path = fnamemodify(path, ':t')
     let path = empty(path) ? getbufvar(bufnr, '&filetype', '') : path
-    for bnr in buflist  " settabvar() overrides 'last accessed tab' so use this instead
-      call setbufvar(bnr, 'tabline_bufnr', bufnr)
-    endfor
+    call settabvar(tnr, 'tabline_bufnr', bufnr)
     if len(path) - 2 > g:tabline_maxlength
       let offset = len(path) - g:tabline_maxlength
       let offset += (offset % 2 == 1)
@@ -117,6 +116,8 @@ function! Tabline()
   let tabstart = 1  " first tab shown
   let tabend = tabpagenr('$')  " last tab shown
   let tabpage = tabpagenr()
+  let tabvalue = gettabvar(tablast, 'tabline_bufnr', 0)
+  call settabvar(tablast, 'tabline_bufnr', tabvalue)  " restore last accessed status
   while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
     if tabend - tabpage > tabpage - tabstart
       let tabstrings = tabstrings[:-2]
