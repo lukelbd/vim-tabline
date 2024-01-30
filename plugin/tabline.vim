@@ -27,7 +27,7 @@ endif
 
 " Default settings
 if !exists('g:tabline_maxlength')
-  let g:tabline_maxlength = 12
+  let g:tabline_maxlength = 13
 endif
 if !exists('g:tabline_skip_filetypes')
   let g:tabline_skip_filetypes = ['diff', 'help', 'man', 'qf']
@@ -81,21 +81,22 @@ function! Tabline()
     if len(path) - 2 > g:tabline_maxlength
       let offset = len(path) - g:tabline_maxlength
       let offset += (offset % 2 == 1)
-      let path = '·' . path[offset / 2: len(path) - offset / 2] . '·'
+      let part = strcharpart(path, offset / 2, g:tabline_maxlength)
+      let path = '·' . part . '·'
     endif
     let tabtext .= empty(path) ? '|? ' : '|' . path . ' '
 
     " Add markers and update lists
     let modified = getbufvar(bufnr, '&modified')
+    let changed = getbufvar(bufnr, 'tabline_filechanged', 0)
     if modified
       let tabtext .= '[+] '
     endif
-    let changed = getbufvar(bufnr, 'tabline_filechanged', 0)
     if changed
       let tabtext .= '[!] '
     endif
-    let tabtexts += [tabtext]
-    let tabstrings += [tabstring . tabtext]
+    call add(tabtexts, tabtext)
+    call add(tabstrings, tabstring . tabtext)
 
     " Emit warning
     let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)
@@ -115,7 +116,7 @@ function! Tabline()
   let tabstart = 1  " first tab shown
   let tabend = tabpagenr('$')  " last tab shown
   let tabpage = tabpagenr()
-  while len(join(tabtexts, '')) + len(prefix) + len(suffix) > &columns
+  while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
     if tabend - tabpage > tabpage - tabstart
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
@@ -134,9 +135,12 @@ function! Tabline()
   let flag = has('gui_running') ? '#be0119' : 'Red'  " copied from xkcd scarlet
   let black = has('gui_running') ? s:default_color('bg', 1) : 'Black'
   let white = has('gui_running') ? s:default_color('fg', 0) : 'White'
-  exe 'highlight TabLine ' . s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
-  exe 'highlight TabLineFill ' . s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
-  exe 'highlight TabLineSel ' . s . 'fg=' . black . ' ' . s . 'bg=' . white . ' ' . s . '=None'
+  let tabline = s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
+  let tablinesel = s . 'fg=' . black . ' ' . s . 'bg=' . white . ' ' . s . '=None'
+  let tablinefill = s . 'fg=' . white . ' ' . s . 'bg=' . black . ' ' . s . '=None'
+  exe 'highlight TabLine ' . tabline
+  exe 'highlight TabLineSel ' . tablinesel
+  exe 'highlight TabLineFill ' . tablinefill
   return prefix . join(tabstrings,'') . suffix . '%#TabLineFill#'
 endfunction
 
