@@ -74,12 +74,12 @@ function! Tabline()
     endfor
 
     " Create the tab with an updated file
-    call settabvar(tnr, 'tabline_path', path)
-    call settabvar(tnr, 'tabline_bufnr', bufnr)
+    " Warning: settabvar() overrides 'last tab' seen by 'tabnext #' so use setbufvar()
     let path = fnamemodify(path, ':t')
-    if empty(path)
-      let path = getbufvar(bufnr, '&filetype', '')
-    endif
+    let path = empty(path) ? getbufvar(bufnr, '&filetype', '') : path
+    for bnr in buflist
+      call setbufvar(bnr, 'tabline_bufnr', bufnr)
+    endfor
     if len(path) - 2 > g:tabline_maxlength
       let offset = len(path) - g:tabline_maxlength
       let offset += (offset % 2 == 1)
