@@ -74,6 +74,8 @@ function! Tabline()
     endfor
 
     " Create the tab with an updated file
+    call settabvar(tnr, 'tabline_path', path)
+    call settabvar(tnr, 'tabline_bufnr', bufnr)
     let path = fnamemodify(path, ':t')
     if empty(path)
       let path = getbufvar(bufnr, '&filetype', '')
