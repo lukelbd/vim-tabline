@@ -116,8 +116,8 @@ function! Tabline()
   let tabstart = 1  " first tab shown
   let tabend = tabpagenr('$')  " last tab shown
   let tabpage = tabpagenr()
-  let tabvalue = gettabvar(tablast, 'tabline_bufnr', 0)
-  call settabvar(tablast, 'tabline_bufnr', tabvalue)  " restore last accessed status
+  let tabvar = gettabvar(tablast, 'tabline_bufnr', 0)
+  call settabvar(tablast, 'tabline_bufnr', tabvar)  " restore last accessed status
   while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
     if tabend - tabpage > tabpage - tabstart
       let tabstrings = tabstrings[:-2]
