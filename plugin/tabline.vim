@@ -65,9 +65,9 @@ function! Tabline()
     let tabtext = ' ' . tnr . ''
     let tabstring = '%' . tnr . 'T'  " edges of highlight groups and clickable area
     let tabstring .= tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
-    for bufnr in buflist
-      let path = expand('#' . bufnr . ':p')
-      let type = getbufvar(bufnr, '&filetype')
+    for bnr in buflist
+      let path = expand('#' . bnr . ':p')
+      let type = getbufvar(bnr, '&filetype')
       if index(g:tabline_skip_filetypes, type) == -1
         break  " use this as 'primary' or else use the final one
       endif
@@ -77,10 +77,10 @@ function! Tabline()
     let path = fnamemodify(path, ':t')
     let nofile = empty(path) || path =~# '^!'
     if nofile  " display filetype instead of path
-      let path = getbufvar(bufnr, '&filetype', path)
+      let path = getbufvar(bnr, '&filetype', path)
     endif
-    for bnr in buflist  " settabvar() somehow interferes with visual mode iter#scroll
-      call setbufvar(bnr, 'tabline_bufnr', bufnr)
+    for nr in buflist  " settabvar() somehow interferes with visual mode iter#scroll
+      call setbufvar(nr, 'tabline_bufnr', bnr)
     endfor
     if len(path) - 2 > g:tabline_maxlength
       let offset = len(path) - g:tabline_maxlength
@@ -91,8 +91,8 @@ function! Tabline()
     let tabtext .= empty(path) ? '|? ' : '|' . path . ' '
 
     " Add markers and update lists
-    let modified = !nofile && getbufvar(bufnr, '&modified')
-    let changed = !nofile && getbufvar(bufnr, 'tabline_filechanged', 0)
+    let modified = !nofile && getbufvar(bnr, '&modified')
+    let changed = !nofile && getbufvar(bnr, 'tabline_filechanged', 0)
     if modified
       let tabtext .= '[+] '
     endif
@@ -103,14 +103,14 @@ function! Tabline()
     call add(tabstrings, tabstring . tabtext)
 
     " Emit warning
-    let warned = getbufvar(bufnr, 'tabline_warnchanged', 0)
+    let warned = getbufvar(bnr, 'tabline_warnchanged', 0)
     if !changed || !modified
-      call setbufvar(bufnr, 'tabline_warnchanged', 0)
+      call setbufvar(bnr, 'tabline_warnchanged', 0)
     elseif !warned
       echohl WarningMsg
       echo 'Warning: Modifying buffer that was changed on disk.'
       echohl None
-      call setbufvar(bufnr, 'tabline_warnchanged', 1)
+      call setbufvar(bnr, 'tabline_warnchanged', 1)
     endif
   endfor
 
