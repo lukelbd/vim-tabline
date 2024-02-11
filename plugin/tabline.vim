@@ -103,7 +103,7 @@ function! Tabline()
       call add(flags, '[+]')
     endif
     if !changed && unstaged
-      call add(flags, '[:]')
+      call add(flags, '[~]')
     endif
     if changed
       call add(flags, '[!]')
