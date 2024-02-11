@@ -75,7 +75,10 @@ function! Tabline()
 
     " Create the tab with an updated file
     let path = fnamemodify(path, ':t')
-    let path = empty(path) ? getbufvar(bufnr, '&filetype', '') : path
+    let nofile = empty(path) || path =~# '^!'
+    if nofile  " display filetype instead of path
+      let path = getbufvar(bufnr, '&filetype', path)
+    endif
     for bnr in buflist  " settabvar() somehow interferes with visual mode iter#scroll
       call setbufvar(bnr, 'tabline_bufnr', bufnr)
     endfor
@@ -88,8 +91,8 @@ function! Tabline()
     let tabtext .= empty(path) ? '|? ' : '|' . path . ' '
 
     " Add markers and update lists
-    let modified = getbufvar(bufnr, '&modified')
-    let changed = getbufvar(bufnr, 'tabline_filechanged', 0)
+    let modified = !nofile && getbufvar(bufnr, '&modified')
+    let changed = !nofile && getbufvar(bufnr, 'tabline_filechanged', 0)
     if modified
       let tabtext .= '[+] '
     endif
