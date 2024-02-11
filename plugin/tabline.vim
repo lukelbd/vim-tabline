@@ -91,13 +91,25 @@ function! Tabline()
     let tabtext .= empty(path) ? '|? ' : '|' . path . ' '
 
     " Add markers and update lists
-    let modified = !nofile && getbufvar(bnr, '&modified')
+    let flags = []
     let changed = !nofile && getbufvar(bnr, 'tabline_filechanged', 0)
+    let modified = !nofile && getbufvar(bnr, '&modified')
+    if nofile || !exists('*gitgutter#hunk#summary')
+      let unstaged = 0
+    else
+      let unstaged = len(filter(copy(gitgutter#hunk#summary(bnr)), 'v:val'))
+    endif
     if modified
-      let tabtext .= '[+] '
+      call add(flags, '[+]')
+    endif
+    if !changed && unstaged
+      call add(flags, '[:]')
     endif
     if changed
-      let tabtext .= '[!] '
+      call add(flags, '[!]')
+    endif
+    if !empty(flags)
+      let tabtext .= join(flags, '') . ' '
     endif
     call add(tabtexts, tabtext)
     call add(tabstrings, tabstring . tabtext)
