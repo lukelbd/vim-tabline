@@ -74,9 +74,11 @@ function! Tabline()
     endfor
 
     " Create the tab with an updated file
+    let blob = '^\x\{33}\(\x\{7}\)$'
     let path = fnamemodify(path, ':t')
-    let nofile = empty(path) || path =~# '^!'
-    if nofile  " display filetype instead of path
+    let path = substitute(path, blob, '\1', '')
+    let none = empty(path) || path =~# '^!'
+    if none  " display filetype instead of path
       let path = getbufvar(bnr, '&filetype', path)
     endif
     for nr in buflist  " settabvar() somehow interferes with visual mode iter#scroll
@@ -92,9 +94,9 @@ function! Tabline()
 
     " Add markers and update lists
     let flags = []
-    let changed = !nofile && getbufvar(bnr, 'tabline_filechanged', 0)
-    let modified = !nofile && getbufvar(bnr, '&modified')
-    if nofile || !exists('*gitgutter#hunk#summary')
+    let changed = !none && getbufvar(bnr, 'tabline_filechanged', 0)
+    let modified = !none && getbufvar(bnr, '&modified')
+    if none || !exists('*gitgutter#hunk#summary')
       let unstaged = 0
     else
       let unstaged = len(filter(copy(gitgutter#hunk#summary(bnr)), 'v:val'))
