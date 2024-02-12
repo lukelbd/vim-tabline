@@ -4,17 +4,18 @@
 " A minimal, informative, black-and-white tabline that helps keep focus on the
 " content in each window and accounts for long filenames and many open tabs.
 "------------------------------------------------------------------------------
-" Autocommand
+" File changed autocommand
 " Warning: For some reason checktime % does not trigger autocmd but
 " checktime without arguments does.
 " Warning: For some reason FileChangedShellPost causes warning message to
 " be shown even with silent! checktime, but FileChangedShell does not.
 scriptencoding utf-8
-augroup tabline_filechanged
+augroup tabline_changed
   au!
   au BufEnter,InsertEnter,TextChanged * silent! checktime
   au BufReadPost,BufWritePost,BufNewFile * let b:tabline_filechanged = 0
   au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_filechanged', 1)
+  au User FugitiveChanged call s:process_buffers(0)
 augroup END
 
 " Deprecated
@@ -33,7 +34,7 @@ if !exists('g:tabline_skip_filetypes')
   let g:tabline_skip_filetypes = ['diff', 'help', 'man', 'qf']
 endif
 
-" Get automatic tabline colors
+" Return default tabline colors
 " Note: This is needed for GUI vim color schemes since they do not use cterm codes.
 " Also some schemes use named colors so have to convert into hex by appending '#'.
 " See: https://stackoverflow.com/a/27870856/4970632
@@ -52,6 +53,28 @@ function! s:default_color(code, ...) abort
   return color
 endfunction
 
+" Process gitgutter buffers
+" Note: If g:gitgutter_async on then still might have delays updating unstaged
+" changes flag, even with a force-update. This seems to be the best we can do.
+" Note: This is needed so that [~] flag displays correctly across tabs. Otherwise
+" does not update until navigating to buffers. Run whenever FugitiveChanged User
+" autocommand fires, e.g. after :Git stage operations or FileChangedShellPost.
+function! s:process_buffers(...) abort
+  let force = a:0 ? a:1 : 0
+  let git = getbufvar(bufnr('%'), 'git_dir', '')
+  let base = fnamemodify(git, ':h')  " remove .git tail
+  if empty(git) | return | endif
+  if !exists('*gitgutter#process_buffer') | return | endif
+  for tnr in range(1, tabpagenr('$'))  " iterate through each tab
+    for bnr in tabpagebuflist(tnr)
+      let name = fnamemodify(bufname(bnr), ':p')
+      let igit = getbufvar(bnr, 'git_dir', '')
+      if git ==# igit || name =~# '^' . base
+        call gitgutter#process_buffer(bnr, force)
+      endif
+    endfor
+  endfor
+endfunction
 
 " Generate tabline text
 function! Tabline()
@@ -104,7 +127,7 @@ function! Tabline()
     if modified
       call add(flags, '[+]')
     endif
-    if !changed && unstaged
+    if unstaged
       call add(flags, '[~]')
     endif
     if changed
