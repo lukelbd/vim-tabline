@@ -256,11 +256,15 @@ function! s:tabline_text(...)
   endwhile
 
   " Truncate if too long
-  let direc = -1  " truncation direction
+  let tnr = tabpagenr()
+  let tleft = max([tleft, 1])
+  let tright = min([tright, tabpagenr('$')])
   let prefix = tleft > 1 ? '···' : ''
   let suffix = tright < tabpagenr('$') ? '···' : ''
   while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
-    if direc == 1
+    let rhs = tright - tnr > tnr - tleft  " truncate on right
+    let rhs = tnr == 1 || rhs && tnr < tabpagenr('$')
+    if rhs
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
       let suffix = '···'
@@ -269,7 +273,6 @@ function! s:tabline_text(...)
       let tabtexts = tabtexts[1:]
       let prefix = '···'
     endif
-    let direc *= -1
   endwhile
 
   " Apply syntax colors and return string
