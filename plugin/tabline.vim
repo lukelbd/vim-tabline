@@ -107,6 +107,7 @@ function! s:queue_updates(...) abort
     return
   endif
   let bnrs = call('s:tabline_buffers', a:000)
+  let bnrs = type(bnrs) == 0 ? [bnrs] : bnrs
   for bnr in bnrs
     let irepo = getbufvar(bnr, 'git_dir', '')
     if irepo ==# repo
@@ -214,6 +215,7 @@ function! s:tabline_text(...)
     let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
     if !none && changed && process
       call s:fugitive_update(bnr)  " updates unstaged status if b:tabline_file_changed
+      call s:gitgutter_update(bnr)  " prefer gitgutter signs, e.g. viewing old file version
       call setbufvar(bnr, 'tabline_repo_changed', 0)
     endif
     let modified = !none && getbufvar(bnr, '&modified', 0)
