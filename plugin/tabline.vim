@@ -26,8 +26,9 @@ augroup tabline_update
   au BufReadPost,BufWritePost,FileChangedShell * call s:fugitive_update(expand('<afile>'))
   au BufReadPost,BufWritePost,BufNewFile * let b:tabline_file_changed = 0
   au BufEnter,InsertEnter,TextChanged * silent! checktime
-  au User GitGutterStage call s:fugitive_update('%')
+  au BufWritePost * call s:gitgutter_update('%', 1)
   au User GitGutter call s:gitgutter_update('%')
+  au User GitGutterStage call s:fugitive_update('%')
   au User FugitiveChanged call s:queue_updates()
   au VimEnter,FocusGained * call s:queue_updates()
 augroup END
@@ -64,19 +65,23 @@ function! s:fugitive_update(...) abort
   if fchanged || rchanged || !exists('*gitgutter#process_buffer')
     let args = head + [path]
     let result = FugitiveExecute(args)
-    let changes = get(result, 'exit_status', 0) == 1
-    call setbufvar(bnr, 'tabline_unstaged_changes', changes)
+    let status = get(result, 'exit_status', 0)
+    if status == 0 || status == 1
+      call setbufvar(bnr, 'tabline_unstaged_changes', status == 1)
+    endif
   endif
   let args = head + ['--staged', path]
   let result = FugitiveExecute(args)  " see: https://stackoverflow.com/a/1587877/4970632
-  let changes = get(result, 'exit_status', 0) == 1  " exits 1 if there are staged changes
-  call setbufvar(bnr, 'tabline_staged_changes', changes)
+  let status = get(result, 'exit_status', 0)
+  if status == 0 || status == 1  " exits 1 if there are staged changes
+    call setbufvar(bnr, 'tabline_staged_changes', status == 1)
+  endif
 endfunction
 
 " Detect gitgutter staged changes
-" Note: After e.g. :Git stage commands git gutter can be out of date if gitgutter
-" process was not triggered, so update synchronously but only after FugitiveChanged
-" events and only for the tabs visible in the window to prevent hanging.
+" Note: Previously used git gutter to get staged/unstaged status but now have mostly
+" switched to fugitive. No longer need to run forced updates but still useful e.g. to
+" detect 'usntaged' status in modified buffer and skip fugitive unstaged checks.
 function! s:gitgutter_update(...) abort
   let bnr = bufnr(a:0 ? a:1 : '')
   let path = fnamemodify(bufname(bnr), ':p')
@@ -214,8 +219,8 @@ function! s:tabline_text(...)
     let flags = []
     let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
     if !none && changed && process
-      call s:fugitive_update(bnr)  " updates unstaged status if b:tabline_file_changed
-      call s:gitgutter_update(bnr)  " prefer gitgutter signs, e.g. viewing old file version
+      call s:gitgutter_update(bnr)  " backup in case we skip fugitive unstaged check
+      call s:fugitive_update(bnr)  " updates unstaged only if b:tabline_file_changed
       call setbufvar(bnr, 'tabline_repo_changed', 0)
     endif
     let modified = !none && getbufvar(bnr, '&modified', 0)
