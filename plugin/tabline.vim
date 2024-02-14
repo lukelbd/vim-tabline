@@ -30,7 +30,7 @@ augroup tabline_update
   au User GitGutter call s:gitgutter_update('%')
   au User GitGutterStage call s:fugitive_update('%')
   au User FugitiveChanged call s:queue_updates()
-  au VimEnter,FocusGained * call s:queue_updates()
+  au FocusGained * call s:queue_updates()
 augroup END
 
 " Primary tabline function
