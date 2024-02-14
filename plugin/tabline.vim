@@ -50,6 +50,12 @@ function! Tabline()
   endif
   return tabstring
 endfunction
+function! TablineFlags(...) abort  " public function
+  return call('s:tabline_flags', a:000)
+endfunct
+function! TablineBuffers(...) abort  " public function
+  return call('s:tabline_buffers', a:000)
+endfunct
 
 " Detect fugitive staged changes
 " Note: Git gutter will be out of date if file is modified and has unstaged changes
@@ -149,7 +155,7 @@ endfunction
 function! s:tabline_buffers(...) abort
   let skip = get(g:, 'tabline_skip_filetypes', [])
   let tnrs = a:0 ? a:000 : range(1, tabpagenr('$'))
-  let bnrs = [] | let paths = []
+  let bnrs = []
   for tnr in tnrs
     let ibnrs = tabpagebuflist(tnr)
     let bnr = get(ibnrs, 0, 0)  " default value
@@ -170,6 +176,38 @@ function! s:tabline_buffers(...) abort
   else  " list result
     return bnrs
   endif
+endfunction
+
+" Get tabline flags
+" Note: This uses [+] for modified changes, [~] for unstaged changes, [:] for staged
+" uncommitted changes, and [!] for files changed on disk. See above for details.
+function! s:tabline_flags(...) abort
+  let bnr = bufnr(a:0 ? a:1 : '')
+  let path = bufname(bnr)
+  let blank = empty(path) || path =~# '^!'
+  let process = a:0 > 1 ? a:1 : 0  " whether to re-process changes
+  let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
+  if !blank && changed && process
+    call s:gitgutter_update(bnr)  " backup in case we skip fugitive unstaged check
+    call s:fugitive_update(bnr)  " updates unstaged only if b:tabline_file_changed
+    call setbufvar(bnr, 'tabline_repo_changed', 0)
+  endif
+  let flags = []  " flags 
+  let modified = !blank && getbufvar(bnr, '&modified', 0)
+  let unstaged = !blank && getbufvar(bnr, 'tabline_unstaged_changes', 0)
+  let staged = !blank && getbufvar(bnr, 'tabline_staged_changes', 0)
+  let changed = !blank && getbufvar(bnr, 'tabline_file_changed', 0)
+  if modified | call add(flags, '[+]') | endif
+  if unstaged | call add(flags, '[~]') | endif
+  if staged | call add(flags, '[:]') | endif
+  if changed | call add(flags, '[!]') | endif
+  if changed && modified && !getbufvar(bnr, 'tabline_warnchanged', 0)
+    echohl WarningMsg
+    echo 'Warning: Modifying buffer that was changed on disk.'
+    echohl None
+    call setbufvar(bnr, 'tabline_warnchanged', 1)
+  endif
+  return empty(flags) ? '' : ' ' . join(flags, '')
 endfunction
 
 " Generate tabline text
@@ -197,46 +235,27 @@ function! s:tabline_text(...)
     elseif tnr == tleft && tleft < 1
       continue  " possibly more tabs to the right
     endif
-
     " Get truncated tab text and set variable
     let bnr = s:tabline_buffers(tnr)
     let path = expand('#' . bnr . ':p')
-    let blob = '^\x\{33}\(\x\{7}\)$'
     let name = fnamemodify(path, ':t')
-    let name = substitute(name, blob, 'commit:\1', '')
-    let none = empty(name) || name =~# '^!'
-    if none  " display filetype instead of path
+    let blob = '^\x\{33}\(\x\{7}\)$'
+    if empty(name) || name =~# '^!'  " display filetype instead of path
       let name = getbufvar(bnr, '&filetype', name)
+    else  " truncate fugitive commit hash
+      let name = substitute(name, blob, 'commit:\1', '')
     endif
     if len(name) - 2 > g:tabline_maxlength
       let offset = len(name) - g:tabline_maxlength
-      let offset += (offset % 2 == 1)
+      let offset = offset + (offset % 2 == 1)
       let part = strcharpart(name, offset / 2, g:tabline_maxlength)
       let name = '·' . part . '·'
     endif
-
-    " Add flags indicating file and repo status
-    let flags = []
-    let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
-    if !none && changed && process
-      call s:gitgutter_update(bnr)  " backup in case we skip fugitive unstaged check
-      call s:fugitive_update(bnr)  " updates unstaged only if b:tabline_file_changed
-      call setbufvar(bnr, 'tabline_repo_changed', 0)
-    endif
-    let modified = !none && getbufvar(bnr, '&modified', 0)
-    let unstaged = getbufvar(bnr, 'tabline_unstaged_changes', 0)
-    let changed = !none && getbufvar(bnr, 'tabline_file_changed', 0)
-    let staged = getbufvar(bnr, 'tabline_staged_changes', 0)
-    if modified | call add(flags, '[+]') | endif
-    if unstaged | call add(flags, '[~]') | endif
-    if staged | call add(flags, '[:]') | endif
-    if changed | call add(flags, '[!]') | endif
-
-    " Add to tab text and possibly warn
+    " Append to tab text
     let name = empty(name) ? '?' : name
+    let flags = s:tabline_flags(bnr, process)
     let group = tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
-    let suffix = empty(flags) ? '' : join(flags, '') . ' '
-    let tabtext = ' ' . tnr . '|' . name . ' ' . suffix
+    let tabtext = ' ' . tnr . '|' . name . flags . ' '
     let tabstring = '%' . tnr . 'T' . group . tabtext
     if tnr == tright
       call add(tabtexts, tabtext)
@@ -245,16 +264,7 @@ function! s:tabline_text(...)
       call insert(tabtexts, tabtext)
       call insert(tabstrings, tabstring)
     endif
-    if changed && modified
-      if !getbufvar(bnr, 'tabline_warnchanged', 0)
-        echohl WarningMsg
-        echo 'Warning: Modifying buffer that was changed on disk.'
-        echohl None
-        call setbufvar(bnr, 'tabline_warnchanged', 1)
-      endif
-    endif
   endwhile
-
   " Truncate if too long
   let tnr = tabpagenr()
   let tleft = max([tleft, 1])
@@ -274,7 +284,6 @@ function! s:tabline_text(...)
       let prefix = '···'
     endif
   endwhile
-
   " Apply syntax colors and return string
   let s = has('gui_running') ? 'gui' : 'cterm'
   let flag = has('gui_running') ? '#be0119' : 'Red'  " copied from xkcd scarlet
