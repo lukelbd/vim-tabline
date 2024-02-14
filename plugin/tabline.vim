@@ -69,15 +69,13 @@ function! s:fugitive_update(...) abort
   let fchanged = getbufvar(bnr, 'tabline_file_changed', 0)
   let rchanged = getbufvar(bnr, 'tabline_repo_changed', 0)
   if fchanged || rchanged || !exists('*gitgutter#process_buffer')
-    let args = head + [path]
-    noautocmd let result = FugitiveExecute(args)
+    let result = FugitiveExecute(head + [path])
     let status = get(result, 'exit_status', 0)
     if status == 0 || status == 1
       call setbufvar(bnr, 'tabline_unstaged_changes', status == 1)
     endif
   endif  " see: https://stackoverflow.com/a/1587877/4970632
-  let args = head + ['--staged', path]
-  noautocmd let result = FugitiveExecute(args)
+  let result = FugitiveExecute(head + ['--staged', path])
   let status = get(result, 'exit_status', 0)
   if status == 0 || status == 1  " exits 1 if there are staged changes
     call setbufvar(bnr, 'tabline_staged_changes', status == 1)
@@ -96,7 +94,7 @@ function! s:gitgutter_update(...) abort
   if a:0 > 1 && a:2
     let async = get(g:, 'gitgutter_async', 0)
     try
-      let g:gitgutter_async = 0 | silent! noautocmd call gitgutter#process_buffer(bnr, 0)
+      let g:gitgutter_async = 0 | call gitgutter#process_buffer(bnr, 0)
     finally
       let g:gitgutter_async = async
     endtry
