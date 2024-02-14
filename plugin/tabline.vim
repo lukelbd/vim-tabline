@@ -5,6 +5,8 @@
 " content in each window and accounts for long filenames and many open tabs.
 "------------------------------------------------------------------------------
 " Global settings and autocommands
+" Note: In case gitgutter not installed support fugitive-only alternative by simply
+" triggering s:fugitive_update() on BufWritePost.
 " Warning: For some reason 'checktime %' does not trigger autocommand
 " but checktime without arguments does.
 " Warning: For some reason FileChangedShellPost causes warning message to
@@ -20,14 +22,14 @@ if !exists('g:tabline_skip_filetypes')  " support deprecated name
 endif
 augroup tabline_update
   au!
-  au VimEnter * call s:queue_updates()
+  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
+  au BufReadPost,BufWritePost,FileChangedShell * call s:fugitive_update(expand('<afile>'))
+  au BufReadPost,BufWritePost,BufNewFile * let b:tabline_file_changed = 0
   au BufEnter,InsertEnter,TextChanged * silent! checktime
-  au BufReadPost,BufWritePost,BufNewFile * let b:tabline_filechanged = 0
-  au BufWritePost,FileChangedShell * call s:fugitive_update(1, expand('<afile>'))
-  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_filechanged', 1)
-  au User GitGutterStage call s:fugitive_update(0, '%')
-  au User GitGutter call s:gitgutter_update(0, '%')
-  au User FugitiveChanged call s:queue_updates() | let g:tabline_initialized = 0
+  au User GitGutterStage call s:fugitive_update('%')
+  au User GitGutter call s:gitgutter_update('%')
+  au User FugitiveChanged call s:queue_updates()
+  au VimEnter,FocusGained * call s:queue_updates()
 augroup END
 
 " Primary tabline function
@@ -35,15 +37,15 @@ augroup END
 " processing and queue another draw after every FugitiveChanged event. This prevents
 " screen from hanging, e.g. after :Git stage triggers 'press enter to coninue' prompt
 function! Tabline()
-  let init = get(g:, 'tabline_initialized', 1)
-  let g:tabline_initialized = 1
-  if !init  " temporarily skip unstaged changes check
+  let redraw = get(g:, 'tabline_redraw', 0)
+  let g:tabline_redraw = 0
+  if redraw  " quickly redraw tabline without checking unstaged changes
     let tabstring = s:tabline_text(0)
-  else  " allow unstaged changes check
+  else  " redraw tabline including unstaged changes check
     let tabstring = s:tabline_text(1)
   endif
-  if !init  " only happens if fugitive exists
-    call feedkeys("\<Cmd>redrawtabline\<CR>", 'n')
+  if redraw  " only happens if fugitive exists
+    call feedkeys("\<Cmd>silent! redrawtabline\<CR>", 'n')
   endif
   return tabstring
 endfunction
@@ -52,33 +54,35 @@ endfunction
 " Note: Git gutter will be out of date if file is modified and has unstaged changes
 " on disk so detect unstaged changes with fugitive. Only need to do this each time
 " file changes then will persist the [~] flag state across future tab draws.
-function! s:fugitive_update(both, ...) abort
+function! s:fugitive_update(...) abort
   let bnr = bufnr(a:0 ? a:1 : '')  " default current buffer
   let path = fnamemodify(bufname(bnr), ':p')
   let head = ['diff', '--quiet', '--ignore-submodules']
   if !exists('*FugitiveExecute') | return | endif
-  if a:both
+  let fchanged = getbufvar(bnr, 'tabline_file_changed', 0)
+  let rchanged = getbufvar(bnr, 'tabline_repo_changed', 0)
+  if fchanged || rchanged || !exists('*gitgutter#process_buffer')
     let args = head + [path]
     let result = FugitiveExecute(args)
-    let unstaged = get(result, 'exit_status', 0) == 1
-    call setbufvar(bnr, 'tabline_unstaged', unstaged)
+    let changes = get(result, 'exit_status', 0) == 1
+    call setbufvar(bnr, 'tabline_unstaged_changes', changes)
   endif
   let args = head + ['--staged', path]
   let result = FugitiveExecute(args)  " see: https://stackoverflow.com/a/1587877/4970632
-  let staged = get(result, 'exit_status', 0) == 1  " exits 1 if there are staged changes
-  call setbufvar(bnr, 'tabline_staged', staged)
+  let changes = get(result, 'exit_status', 0) == 1  " exits 1 if there are staged changes
+  call setbufvar(bnr, 'tabline_staged_changes', changes)
 endfunction
 
 " Detect gitgutter staged changes
 " Note: After e.g. :Git stage commands git gutter can be out of date if gitgutter
 " process was not triggered, so update synchronously but only after FugitiveChanged
 " events and only for the tabs visible in the window to prevent hanging.
-function! s:gitgutter_update(process, ...) abort
+function! s:gitgutter_update(...) abort
   let bnr = bufnr(a:0 ? a:1 : '')
   let path = fnamemodify(bufname(bnr), ':p')
   if !exists('*gitgutter#process_buffer') | return | endif
-  if getbufvar(bnr, 'tabline_filechanged', 0) | return | endif  " use fugitive only
-  if a:process
+  if getbufvar(bnr, 'tabline_file_changed', 0) | return | endif  " use fugitive only
+  if a:0 > 1 && a:2
     let async = get(g:, 'gitgutter_async', 0)
     try
       let g:gitgutter_async = 0 | call gitgutter#process_buffer(bnr, 0)
@@ -89,24 +93,24 @@ function! s:gitgutter_update(process, ...) abort
   let stats = getbufvar(bnr, 'gitgutter', {})
   let hunks = copy(get(stats, 'summary', []))  " [added, modified, removed]
   let value = len(filter(hunks, 'v:val')) > 0
-  call setbufvar(bnr, 'tabline_unstaged', value)
+  call setbufvar(bnr, 'tabline_unstaged_changes', value)
 endfunction
 
 " Assign git variables after FugitiveChanged
 " Note: This assigns buffer variables after e.g. FileChangedShell or FugitiveChange
 " so that Tabline() can further delay processing until tab needs to be redrawn.
 function! s:queue_updates(...) abort
+  let g:tabline_redraw = 1
   let repo = FugitiveGitDir()  " repo that was changed
   let base = fnamemodify(repo, ':h')  " remove .git tail
   if empty(repo)
     return
   endif
-  let [bnrs, paths] = call('s:tabline_paths', a:000)
-  for idx in range(len(bnrs))
-    let [bnr, path] = [bnrs[idx], paths[idx]]
+  let bnrs = call('s:tabline_buffers', a:000)
+  for bnr in bnrs
     let irepo = getbufvar(bnr, 'git_dir', '')
-    if irepo ==# repo || path =~# '^' . base
-      call setbufvar(bnr, 'tabline_updated', 0)
+    if irepo ==# repo
+      call setbufvar(bnr, 'tabline_repo_changed', 1)
     endif
   endfor
 endfunction
@@ -136,32 +140,29 @@ endfunction
 " Get primary panel in tab ignoring popups
 " Note: This skips windows containing shell commands, e.g. full-screen fzf
 " prompts, and uses the first path that isn't a skipped filetype.
-function! s:tabline_paths(...) abort
+function! s:tabline_buffers(...) abort
   let skip = get(g:, 'tabline_skip_filetypes', [])
   let tnrs = a:0 ? a:000 : range(1, tabpagenr('$'))
   let bnrs = [] | let paths = []
   for tnr in tnrs
     let ibnrs = tabpagebuflist(tnr)
-    let ipaths = map(copy(ibnrs), "expand('#' . v:val . ':p')")
     let bnr = get(ibnrs, 0, 0)  " default value
-    let path = get(ipaths, 0, '')  " default value
-    for idx in range(len(ibnrs))
-      if ipaths[idx] =~# '^!'
+    for ibnr in ibnrs
+      if expand('#' . ibnr . ':p') =~# '^!'
         continue  " skip shell commands e.g. fzf
-      elseif index(skip, getbufvar(ibnrs[idx], '&filetype', '')) == -1
-        let bnr = ibnrs[idx] | let path = ipaths[idx] | break
+      elseif index(skip, getbufvar(ibnr, '&filetype', '')) == -1
+        let bnr = ibnr | break
       endif
     endfor
     for ibnr in ibnrs  " settabvar() somehow interferes with visual mode iter#scroll
       call setbufvar(ibnr, 'tabline_bufnr', bnr)
     endfor
     call add(bnrs, bnr)
-    call add(paths, path)
   endfor
-  if a:0 != 1
-    return [bnrs, paths]
-  else  " scalar result
-    return [bnrs[0], paths[0]]
+  if a:0 == 1  " scalar result
+    return bnrs[0]
+  else  " list result
+    return bnrs
   endif
 endfunction
 
@@ -192,10 +193,11 @@ function! s:tabline_text(...)
     endif
 
     " Get truncated tab text and set variable
-    let [bnr, path] = s:tabline_paths(tnr)
+    let bnr = s:tabline_buffers(tnr)
+    let path = expand('#' . bnr . ':p')
     let blob = '^\x\{33}\(\x\{7}\)$'
     let name = fnamemodify(path, ':t')
-    let name = substitute(name, blob, '\1', '')
+    let name = substitute(name, blob, 'commit:\1', '')
     let none = empty(name) || name =~# '^!'
     if none  " display filetype instead of path
       let name = getbufvar(bnr, '&filetype', name)
@@ -209,17 +211,15 @@ function! s:tabline_text(...)
 
     " Add flags indicating file and repo status
     let flags = []
-    let changed = !none && getbufvar(bnr, 'tabline_filechanged', 0)
-    let updated = none || getbufvar(bnr, 'tabline_updated', 1)
-    if !none && !updated && process
-      let both = changed || !exists('*gitgutter#process_buffer')
-      call s:gitgutter_update(process, bnr)  " exits early if b:tabline_filechanged
-      call s:fugitive_update(both, bnr)  " also update unstaged status if file changed
-      call setbufvar(bnr, 'tabline_updated', 1)
+    let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
+    if !none && changed && process
+      call s:fugitive_update(bnr)  " updates unstaged status if b:tabline_file_changed
+      call setbufvar(bnr, 'tabline_repo_changed', 0)
     endif
     let modified = !none && getbufvar(bnr, '&modified', 0)
-    let unstaged = getbufvar(bnr, 'tabline_unstaged', 0)
-    let staged = getbufvar(bnr, 'tabline_staged', 0)
+    let unstaged = getbufvar(bnr, 'tabline_unstaged_changes', 0)
+    let changed = !none && getbufvar(bnr, 'tabline_file_changed', 0)
+    let staged = getbufvar(bnr, 'tabline_staged_changes', 0)
     if modified | call add(flags, '[+]') | endif
     if unstaged | call add(flags, '[~]') | endif
     if staged | call add(flags, '[:]') | endif
