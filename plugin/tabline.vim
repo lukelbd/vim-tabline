@@ -5,12 +5,11 @@
 " content in each window and accounts for long filenames and many open tabs.
 "------------------------------------------------------------------------------
 " Global settings and autocommands
-" Note: In case gitgutter not installed support fugitive-only alternative by simply
-" triggering s:fugitive_update() on BufWritePost.
-" Warning: For some reason 'checktime %' does not trigger autocommand
-" but checktime without arguments does.
-" Warning: For some reason FileChangedShellPost causes warning message to
-" be shown even with 'silent! checktime' but FileChangedShell does not.
+" Note: Queue flag updates whenever reading or writing buffers to generate flags before
+" gitgutter processes trigger and support simple fugitive-only version of plugin.
+" Warning: For some reason 'checktime %' does not trigger autocommand but checktime
+" without arguments does, and FileChangedShellPost causes warning message to be shown
+" even with 'silent! checktime' but FileChangedShell does not.
 scriptencoding utf-8  " required for truncation symbols
 setglobal tabline=%!Tabline()
 let &g:showtabline = &showtabline ? &g:showtabline : 1
@@ -23,8 +22,8 @@ endif
 augroup tabline_update
   au!
   au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
-  au BufReadPost,BufWritePost,FileChangedShell * call s:fugitive_update(expand('<afile>'))
-  au BufReadPost,BufWritePost,BufNewFile * let b:tabline_file_changed = 0
+  au BufReadPost,BufWritePost * let b:tabline_file_changed = 0
+  au BufReadPost,BufWritePost,FileChangedShell * let b:tabline_repo_changed = 1
   au BufEnter,InsertEnter,TextChanged * silent! checktime
   au BufWritePost * call s:gitgutter_update('%', 1)
   au User GitGutter call s:gitgutter_update('%')
@@ -69,13 +68,13 @@ function! s:fugitive_update(...) abort
   let fchanged = getbufvar(bnr, 'tabline_file_changed', 0)
   let rchanged = getbufvar(bnr, 'tabline_repo_changed', 0)
   if fchanged || rchanged || !exists('*gitgutter#process_buffer')
-    let result = FugitiveExecute(head + [path])
+    silent let result = FugitiveExecute(head + [path])
     let status = get(result, 'exit_status', 0)
     if status == 0 || status == 1
       call setbufvar(bnr, 'tabline_unstaged_changes', status == 1)
     endif
   endif  " see: https://stackoverflow.com/a/1587877/4970632
-  let result = FugitiveExecute(head + ['--staged', path])
+  silent let result = FugitiveExecute(head + ['--staged', path])
   let status = get(result, 'exit_status', 0)
   if status == 0 || status == 1  " exits 1 if there are staged changes
     call setbufvar(bnr, 'tabline_staged_changes', status == 1)
@@ -94,7 +93,7 @@ function! s:gitgutter_update(...) abort
   if a:0 > 1 && a:2
     let async = get(g:, 'gitgutter_async', 0)
     try
-      let g:gitgutter_async = 0 | call gitgutter#process_buffer(bnr, 0)
+      let g:gitgutter_async = 0 | silent call gitgutter#process_buffer(bnr, 0)
     finally
       let g:gitgutter_async = async
     endtry
@@ -128,12 +127,10 @@ endfunction
 " Generate tabline colors
 " Note: This is needed for GUI vim color schemes since they do not use cterm codes.
 " Also some schemes use named colors so have to convert into hex by appending '#'.
-" See: https://vi.stackexchange.com/a/20757/8084
-" See: https://stackoverflow.com/a/27870856/4970632
 function! s:tabline_color(code, ...) abort
-  let group = hlID('Normal')
+  let group = hlID('Normal')  " see: https://vi.stackexchange.com/a/20757/8084
   let base = synIDattr(group, a:code . '#')
-  if empty(base) || base[0] !=# '#'
+  if empty(base) || base[0] !=# '#'  " see: https://stackoverflow.com/a/27870856/4970632
     return
   endif  " unexpected output
   let shade = a:0 ? a:1 ? 0.3 : 0.0 : 0.0  " shade toward neutral gray
@@ -184,7 +181,7 @@ function! s:tabline_flags(...) abort
   let path = bufname(bnr)
   let blank = empty(path) || path =~# '^!'
   let process = a:0 > 1 ? a:1 : 0  " whether to re-process changes
-  let changed = getbufvar(bnr, 'tabline_repo_changed', 1)  " after FugitiveChanged
+  let changed = getbufvar(bnr, 'tabline_repo_changed', 0)  " after FugitiveChanged
   if !blank && changed && process
     call s:gitgutter_update(bnr)  " backup in case we skip fugitive unstaged check
     call s:fugitive_update(bnr)  " updates unstaged only if b:tabline_file_changed
