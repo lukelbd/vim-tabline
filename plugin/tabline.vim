@@ -84,7 +84,7 @@ endfunction
 " Detect gitgutter staged changes
 " Note: Previously used git gutter to get staged/unstaged status but now have mostly
 " switched to fugitive. No longer need to run forced updates but still useful e.g. to
-" detect 'usntaged' status in modified buffer and skip fugitive unstaged checks.
+" detect 'unstaged' status in modified buffer and skip fugitive unstaged checks.
 function! s:gitgutter_update(...) abort
   let bnr = bufnr(a:0 ? a:1 : '')
   let path = fnamemodify(bufname(bnr), ':p')
