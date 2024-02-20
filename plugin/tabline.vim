@@ -40,14 +40,14 @@ function! Tabline()
   let redraw = get(g:, 'tabline_redraw', 0)
   let g:tabline_redraw = 0
   if redraw  " quickly redraw tabline without checking unstaged changes
-    let tabstring = s:tabline_text(0)
+    let tabtext = s:tabline_text(0)
   else  " redraw tabline including unstaged changes check
-    let tabstring = s:tabline_text(1)
+    let tabtext = s:tabline_text(1)
   endif
   if redraw  " only happens if fugitive exists
     call feedkeys("\<Cmd>silent! redrawtabline\<CR>", 'n')
   endif
-  return tabstring
+  return tabtext
 endfunction
 function! TablineFlags(...) abort  " public function
   return call('s:tabline_flags', a:000)
@@ -234,27 +234,30 @@ endfunction
 " right-left-right-... until either all tabs are drawn or line is wider than &columns
 function! s:tabline_text(...)
   " Initial stuff
+  let nfill = 3  " i.e. ' '10|...' '[+][~]' '
+  let nhead = 3  " i.e. '10|'
+  let ntail = 6  " i.e. '[+][~]'
+  let nmax = g:tabline_maxlength + nfill + nhead + ntail  " approximate max tab width
   let tnr = tabpagenr()
-  let nleft = 2  " maximum number of tabs to left before start filling to right
+  let tmin = tnr - &columns / nmax / 2  " number to allocate to left
   let tleft = tnr + 1  " initial value before filling tabs to left
   let tright = tnr  " initial value before filling tabs to right
-  let tcenter = tnr
-  let tabstrings = []  " tabline string
+  let tabfmts = []  " tabline string
   let tabtexts = []  " displayed text
   let process = a:0 ? a:1 : 0  " update gitgutter
   while strwidth(join(tabtexts, '')) <= &columns
     " Get tab path and tab text
-    if tnr >= tabpagenr('$') || tleft > tcenter - nleft  " current and two to left
+    if tnr >= tabpagenr('$') || tleft > tmin  " current and two to left
       let rfill = 0 | let tleft -= 1 | let tnr = tleft
     else  " fill to right until the final tab
       let rfill = 1 | let tright += 1 | let tnr = tright
     endif
     if tleft < 1 && tright > tabpagenr('$')
-      break
+      let [tleft, tright] = [1, tabpagenr('$')] | break
     elseif rfill && tright > tabpagenr('$')
-      continue  " possibly more tabs to the left
+      let tright = tabpagenr('$') | continue  " possibly more tabs to the left
     elseif !rfill && tleft < 1
-      continue  " possibly more tabs to the right
+      let tleft = 1 | continue  " possibly more tabs to the right
     endif
     let bnr = s:tabline_buffers(tnr)
     let label = s:tabline_label(bnr)
@@ -268,32 +271,70 @@ function! s:tabline_text(...)
       let label = '·' . strcharpart(label, index, g:tabline_maxlength) . '·'
     endif
     let group = tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
+    let tabfmt = '%' . tnr . 'T' . group
     let tabtext = ' ' . tnr . '|' . label . flags . ' '
-    let tabstring = '%' . tnr . 'T' . group . tabtext
     if rfill
+      call add(tabfmts, tabfmt)
       call add(tabtexts, tabtext)
-      call add(tabstrings, tabstring)
     else
+      call insert(tabfmts, tabfmt)
       call insert(tabtexts, tabtext)
-      call insert(tabstrings, tabstring)
     endif
   endwhile
-  " Truncate if too long
-  let tleft = max([tleft, 1])
-  let tright = min([tright, tabpagenr('$')])
-  let prefix = tleft > 1 ? '···' : ''
-  let suffix = tright < tabpagenr('$') ? '···' : ''
-  while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
-    if tleft <= 1 || tcenter - tleft <= nleft
-      let tabstrings = tabstrings[:-2]
-      let tabtexts = tabtexts[:-2]
-      let tright -= 1
-      let suffix = '···'
+  " Append ellipses and truncate
+  if tleft > 1
+    let tleft -= 1  " assign ellipsis with clickable area
+    call insert(tabfmts, '%' . tleft . 'T%#TabLine#')
+    call insert(tabtexts, tleft >= tabpagenr() - 1 ? '··· ' : '···')
+  endif
+  if tright < tabpagenr('$')
+    let tright += 1  " assign ellipsis with clickable area
+    call add(tabfmts, '%' . tright . 'T%#TabLine#')
+    call add(tabtexts, tright <= tabpagenr() + 1 ? ' ···' : '···')
+  endif
+  while strwidth(join(tabtexts, '')) > &columns
+    let bright = tright == tabpagenr('$')
+    let bleft = tleft == 1
+    let idx = 1 - bleft
+    if len(tabtexts) > 3 - bleft - bright
+      " Truncate tabs on either side
+      if tleft <= 1 || tleft >= tmin - 1
+        let tright -= 1
+        let [tabfmts, tabtexts] = [tabfmts[:-2], tabtexts[:-2]]
+        let tabtexts[-1] = tright <= tabpagenr() + 1 ? ' ···' : '···'
+      else
+        let tleft += 1
+        let [tabfmts, tabtexts] = [tabfmts[1:], tabtexts[1:]]
+        let tabtexts[0] = tleft >= tabpagenr() - 1 ? '··· ' : '···'
+      endif
+    elseif tabtexts[idx] !=? ' · '
+      " Truncate currently selected tab
+      let flag = '\s*\[[+~:!]\]'  " tabline flag
+      let tail = '[^|[\]]\{2}\(' . flag . '\)*'
+      let text = tabtexts[idx]
+      if text =~# tail . '\s*$'
+        let text = substitute(text, tail . '\s*$', '·\1', '')
+      elseif text =~# flag . '\s*$'
+        let text = substitute(text, flag . '\s*$', '', '')
+      else  " empty tabline
+        let text = ' · '
+      endif
+      let tabtexts[idx] = text
     else
-      let tabstrings = tabstrings[1:]
-      let tabtexts = tabtexts[1:]
-      let prefix = '···'
-      let tleft += 1
+      " Truncate previous truncation markers
+      if idx < len(tabtexts) - 1  " remove right outright
+        let tright -= 1
+        let tabfmts = tabfmts[:-2]
+        let tabtexts = tabtexts[:-2]
+      elseif idx > 0  " remove left outright
+        let tleft += 1
+        let tabfmts = tabfmts[1:]
+        let tabtexts = tabtexts[1:]
+      else  " center text padding
+        let pad1 = repeat(' ', &columns > 2)
+        let pad2 = repeat(' ', &columns > 3)
+        let tabtexts[0] = pad1 . '·' . pad2
+      endif
     endif
   endwhile
   " Apply syntax colors and return string
@@ -307,6 +348,10 @@ function! s:tabline_text(...)
   exe 'highlight TabLine ' . tabline
   exe 'highlight TabLineSel ' . tablinesel
   exe 'highlight TabLineFill ' . tablinefill
-  let tabstring = prefix . join(tabstrings,'') . suffix . '%#TabLineFill#'
-  return tabstring
+  let tabtext = ''  " tabline text
+  for idx in range(len(tabtexts))
+    let tabtext .= tabfmts[idx] . tabtexts[idx]
+  endfor
+  let tabtext .= '%#TabLineFill#'
+  return tabtext
 endfunction
