@@ -235,7 +235,7 @@ endfunction
 function! s:tabline_text(...)
   " Initial stuff
   let tnr = tabpagenr()
-  let nleft = 3  " maximum number of tabs to left before start filling to right
+  let nleft = 2  " maximum number of tabs to left before start filling to right
   let tleft = tnr + 1  " initial value before filling tabs to left
   let tright = tnr  " initial value before filling tabs to right
   let tcenter = tnr
