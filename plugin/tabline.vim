@@ -235,7 +235,7 @@ endfunction
 function! s:tabline_text(...)
   " Initial stuff
   let tnr = tabpagenr()
-  let nleft = 2  " maximum number of tabs to left before start filling to right
+  let nleft = 3  " maximum number of tabs to left before start filling to right
   let tleft = tnr + 1  " initial value before filling tabs to left
   let tright = tnr  " initial value before filling tabs to right
   let tcenter = tnr
@@ -284,7 +284,7 @@ function! s:tabline_text(...)
   let prefix = tleft > 1 ? '···' : ''
   let suffix = tright < tabpagenr('$') ? '···' : ''
   while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
-    if tleft < 1 || tcenter - tleft <= nleft
+    if tleft <= 1 || tcenter - tleft <= nleft
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
       let tright -= 1
