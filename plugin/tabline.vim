@@ -173,6 +173,30 @@ function! s:tabline_buffers(...) abort
   endif
 endfunction
 
+" Get the path label for the tabline
+" Note: This replaces 40-digit git hashes with 7-digit abbreviations and replaces
+" empty filename paths with the detected filetype.
+function! s:tabline_label(...)
+  let bnr = bufnr(a:0 ? a:1 : '')
+  let blob = '^\x\{33}\(\x\{7}\)$'
+  let head = getbufvar(bnr, 'fugitive_type', '')
+  let base = getbufvar(bnr, 'git_dir', '')
+  let path = expand('#' . bnr . ':p')
+  let name = expand('#' . bnr . ':p:t')
+  if name =~# '^!'  " shell commands
+    let name = ''
+  elseif name =~# blob  " truncate fugitive commit hash
+    let name = substitute(name, blob, '\1', '')
+  elseif !empty(head)
+    let name = fnamemodify(base, ':h:t')
+  elseif empty(name)  " display filetype instead of path
+    let name = getbufvar(bnr, '&filetype', name)
+  endif
+  let name = empty(name) ? '?' : name
+  let name = empty(head) ? name : head . ':' . name
+  return name
+endfunction
+
 " Get tabline flags
 " Note: This uses [+] for modified changes, [~] for unstaged changes, [:] for staged
 " uncommitted changes, and [!] for files changed on disk. See above for details.
@@ -211,48 +235,42 @@ endfunction
 function! s:tabline_text(...)
   " Initial stuff
   let tnr = tabpagenr()
-  let tleft = tnr
-  let tright = tnr - 1  " initial value
+  let nleft = 2  " maximum number of tabs to left before start filling to right
+  let tleft = tnr + 1  " initial value before filling tabs to left
+  let tright = tnr  " initial value before filling tabs to right
+  let tcenter = tnr
   let tabstrings = []  " tabline string
   let tabtexts = []  " displayed text
   let process = a:0 ? a:1 : 0  " update gitgutter
   while strwidth(join(tabtexts, '')) <= &columns
-    " Get tab number and possibly exit
-    if tnr == tleft
-      let tright += 1 | let tnr = tright
-    else
-      let tleft -= 1 | let tnr = tleft
+    " Get tab path and tab text
+    if tnr >= tabpagenr('$') || tleft > tcenter - nleft  " current and two to left
+      let rfill = 0 | let tleft -= 1 | let tnr = tleft
+    else  " fill to right until the final tab
+      let rfill = 1 | let tright += 1 | let tnr = tright
     endif
     if tleft < 1 && tright > tabpagenr('$')
       break
-    elseif tnr == tright && tright > tabpagenr('$')
+    elseif rfill && tright > tabpagenr('$')
       continue  " possibly more tabs to the left
-    elseif tnr == tleft && tleft < 1
+    elseif !rfill && tleft < 1
       continue  " possibly more tabs to the right
     endif
-    " Get truncated tab text and set variable
     let bnr = s:tabline_buffers(tnr)
-    let path = expand('#' . bnr . ':p')
-    let name = fnamemodify(path, ':t')
-    let blob = '^\x\{33}\(\x\{7}\)$'
-    if empty(name) || name =~# '^!'  " display filetype instead of path
-      let name = getbufvar(bnr, '&filetype', name)
-    else  " truncate fugitive commit hash
-      let name = substitute(name, blob, 'commit:\1', '')
-    endif
-    if len(name) - 2 > g:tabline_maxlength
-      let offset = len(name) - g:tabline_maxlength
-      let offset = offset + (offset % 2 == 1)
-      let part = strcharpart(name, offset / 2, g:tabline_maxlength)
-      let name = '·' . part . '·'
-    endif
-    " Append to tab text
-    let name = empty(name) ? '?' : name
+    let label = s:tabline_label(bnr)
     let flags = s:tabline_flags(bnr, process)
+    " Append truncated tab text
+    let delta = len(label) - g:tabline_maxlength
+    let index = (delta + delta % 2) / 2
+    if label =~# '^\C[a-z]*:' && delta > 1
+      let label = strcharpart(label, 0, g:tabline_maxlength) . '·'
+    elseif delta > 2
+      let label = '·' . strcharpart(label, index, g:tabline_maxlength) . '·'
+    endif
     let group = tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
-    let tabtext = ' ' . tnr . '|' . name . flags . ' '
+    let tabtext = ' ' . tnr . '|' . label . flags . ' '
     let tabstring = '%' . tnr . 'T' . group . tabtext
-    if tnr == tright
+    if rfill
       call add(tabtexts, tabtext)
       call add(tabstrings, tabstring)
     else
@@ -261,22 +279,21 @@ function! s:tabline_text(...)
     endif
   endwhile
   " Truncate if too long
-  let tnr = tabpagenr()
   let tleft = max([tleft, 1])
   let tright = min([tright, tabpagenr('$')])
   let prefix = tleft > 1 ? '···' : ''
   let suffix = tright < tabpagenr('$') ? '···' : ''
   while strwidth(prefix . join(tabtexts, '') . suffix) > &columns
-    let rhs = tright - tnr > tnr - tleft  " truncate on right
-    let rhs = tnr == 1 || rhs && tnr < tabpagenr('$')
-    if rhs
+    if tleft < 1 || tcenter - tleft <= nleft
       let tabstrings = tabstrings[:-2]
       let tabtexts = tabtexts[:-2]
+      let tright -= 1
       let suffix = '···'
     else
       let tabstrings = tabstrings[1:]
       let tabtexts = tabtexts[1:]
       let prefix = '···'
+      let tleft += 1
     endif
   endwhile
   " Apply syntax colors and return string
