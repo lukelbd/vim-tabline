@@ -257,11 +257,11 @@ function! s:tabline_text(...)
       let rfill = 1 | let tright += 1 | let tnr = tright
     endif
     if tleft < 1 && tright > tabpagenr('$')
-      let [tleft, tright] = [1, tabpagenr('$')] | break
+      break
     elseif rfill && tright > tabpagenr('$')
-      let tright = tabpagenr('$') | continue  " possibly more tabs to the left
+      continue  " possibly more tabs to the left
     elseif !rfill && tleft < 1
-      let tleft = 1 | continue  " possibly more tabs to the right
+      continue  " possibly more tabs to the right
     endif
     let bnr = s:tabline_buffers(tnr)
     let label = s:tabline_label(bnr)
@@ -286,11 +286,13 @@ function! s:tabline_text(...)
     endif
   endwhile
   " Append ellipses and truncate
+  let tleft = max([tleft, 1])
   if tleft > 1
     let tleft -= 1  " assign ellipsis with clickable area
     call insert(tabfmts, '%' . tleft . 'T%#TabLine#')
     call insert(tabtexts, tleft >= tabpagenr() - 1 ? '··· ' : '···')
   endif
+  let tright = min([tright, tabpagenr('$')])
   if tright < tabpagenr('$')
     let tright += 1  " assign ellipsis with clickable area
     call add(tabfmts, '%' . tright . 'T%#TabLine#')
