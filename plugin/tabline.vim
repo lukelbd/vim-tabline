@@ -148,19 +148,23 @@ endfunction
 " Note: This skips windows containing shell commands, e.g. full-screen fzf
 " prompts, and uses the first path that isn't a skipped filetype.
 function! s:tabline_buffers(...) abort
-  let skip = get(g:, 'tabline_skip_filetypes', [])
+  let types = get(g:, 'tabline_skip_filetypes', [])
   let tnrs = a:0 ? a:000 : range(1, tabpagenr('$'))
   let bnrs = []
   for tnr in tnrs
     let ibnrs = tabpagebuflist(tnr)
-    let bnr = get(ibnrs, 0, 0)  " default value
+    let [alt, bnr] = [0, 0]  " default value
     for ibnr in ibnrs
-      if expand('#' . ibnr . ':p') =~# '^!'
-        continue  " skip shell commands e.g. fzf
-      elseif index(skip, getbufvar(ibnr, '&filetype', '')) == -1
-        let bnr = ibnr | break
+      let type = getbufvar(ibnr, '&filetype', '')
+      if bufname(ibnr) =~# '^!'
+        continue  " shell comamnds
+      elseif index(types, type) != -1
+        let alt = alt ? alt : ibnr  " panel window
+      else
+        let bnr = bnr ? bnr : ibnr  " main window
       endif
     endfor
+    let bnr = bnr ? bnr : alt ? alt : get(ibnrs, 0, 0)
     for ibnr in ibnrs  " settabvar() somehow interferes with visual mode iter#scroll
       call setbufvar(ibnr, 'tabline_bufnr', bnr)
     endfor
@@ -184,7 +188,7 @@ function! s:tabline_label(...)
   let path = expand('#' . bnr . ':p')
   let name = expand('#' . bnr . ':p:t')
   if name =~# '^!'  " shell commands
-    let name = ''
+    let name = 'shell'
   elseif name =~# blob  " truncate fugitive commit hash
     let name = substitute(name, blob, '\1', '')
   elseif !empty(head)
