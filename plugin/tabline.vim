@@ -13,10 +13,10 @@
 scriptencoding utf-8  " required for truncation symbols
 setglobal tabline=%!Tabline()
 let &g:showtabline = &showtabline ? &g:showtabline : 1
-if !exists('g:tabline_maxlength')  " support deprecated name
+if !exists('g:tabline_maxlength')  " backwards compatibility
   let g:tabline_maxlength = get(g:, 'tabline_charmax', 13)
 endif
-if !exists('g:tabline_skip_filetypes')  " support deprecated name
+if !exists('g:tabline_skip_filetypes')  " backwards compatibility
   let g:tabline_skip_filetypes = get(g:, 'tabline_ftignore', ['diff', 'help', 'man', 'qf'])
 endif
 augroup tabline_update
