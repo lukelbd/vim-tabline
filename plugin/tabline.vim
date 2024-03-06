@@ -184,19 +184,22 @@ function! s:tabline_label(...)
   let bnr = bufnr(a:0 ? a:1 : '')
   let blob = '^\x\{33}\(\x\{7}\)$'
   let head = getbufvar(bnr, 'fugitive_type', '')
-  let base = getbufvar(bnr, 'git_dir', '')
+  let repo = getbufvar(bnr, 'git_dir', '')
   let path = expand('#' . bnr . ':p')
   let name = expand('#' . bnr . ':p:t')
+  let base = a:0 > 1 && a:2 ? expand('#' . bnr . ':p:h:t') : ''
+  let base = filereadable(path) || isdirectory(path) ? base : ''
   if name =~# '^!'  " shell commands
     let name = 'shell'
   elseif name =~# blob  " truncate fugitive commit hash
     let name = substitute(name, blob, '\1', '')
   elseif !empty(head)
-    let name = fnamemodify(base, ':h:t')
+    let name = fnamemodify(repo, ':h:t')
   elseif empty(name)  " display filetype instead of path
     let name = getbufvar(bnr, '&filetype', name)
   endif
   let name = empty(name) ? '?' : name
+  let name = empty(base) ? name : base[0] . '/' . name
   let name = empty(head) ? name : head . ':' . name
   return name
 endfunction
@@ -249,6 +252,8 @@ function! s:tabline_text(...)
   let tabfmts = []  " tabline string
   let tabtexts = []  " displayed text
   let process = a:0 ? a:1 : 0  " update gitgutter
+  let bufnrs = s:tabline_buffers()  " add path if duplicates present
+  let names = map(copy(bufnrs), {_, val -> expand('#' . val . ':p:t')})
   while strwidth(join(tabtexts, '')) <= &columns
     " Get tab path and tab text
     if tnr >= tabpagenr('$') || tleft > tmin  " current and two to left
@@ -263,8 +268,10 @@ function! s:tabline_text(...)
     elseif !rfill && tleft < 1
       continue  " possibly more tabs to the right
     endif
-    let bnr = s:tabline_buffers(tnr)
-    let label = s:tabline_label(bnr)
+    let bnr = bufnrs[tnr - 1]
+    let name = expand('#' . bnr . ':p:t')
+    let dups = filter(copy(names), {_, val -> val ==# name})
+    let label = s:tabline_label(bnr, len(dups) > 1)
     let flags = s:tabline_flags(bnr, process)
     " Append truncated tab text
     let delta = len(label) - g:tabline_maxlength
