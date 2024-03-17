@@ -125,21 +125,19 @@ function! s:queue_updates(...) abort
 endfunction
 
 " Generate tabline colors
-" Note: This is needed for GUI vim color schemes since they do not use cterm codes.
-" Also some schemes use named colors so have to convert into hex by appending '#'.
-function! s:tabline_color(code, ...) abort
-  let group = hlID('Normal')  " see: https://vi.stackexchange.com/a/20757/8084
-  let base = synIDattr(group, a:code . '#')
-  if empty(base) || base[0] !=# '#'  " see: https://stackoverflow.com/a/27870856/4970632
-    return
-  endif  " unexpected output
+" Note: This is needed for GUI vim color schemes since they do not use cterm codes. See
+" https://vi.stackexchange.com/a/20757/8084 https://stackoverflow.com/a/27870856/4970632
+function! s:default_color(code, ...) abort
+  let hex = synIDattr(hlID('Normal'), a:code . '#')  " request conversion to hex
+  if empty(hex) || hex[0] !=# '#' | return | endif  " unexpected output
   let shade = a:0 ? a:1 ? 0.3 : 0.0 : 0.0  " shade toward neutral gray
   let color = '#'  " default hex color
-  for idx in range(1, 5, 2)  " vint: -ProhibitUsingUndeclaredVariable
-    let value = str2nr(base[idx:idx + 1], 16)
+  for idx in range(1, 5, 2)
+    " vint: -ProhibitUsingUndeclaredVariable
+    let value = str2nr(hex[idx:idx + 1], 16)
     let value = value - shade * (value - 128)
-    let value = printf('%02x', float2nr(value))
-    let color .= value
+    let value = min(max([0, value]), 255)
+    let color .= printf('%02x', float2nr(value))
   endfor
   return color
 endfunction
