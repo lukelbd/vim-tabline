@@ -364,5 +364,7 @@ function! s:tabline_text(...)
     let tabtext .= tabfmts[idx] . tabtexts[idx]
   endfor
   let tabtext .= '%#TabLineFill#'
+  let g:tabline_black = black
+  let g:tabline_white = white
   return tabtext
 endfunction
