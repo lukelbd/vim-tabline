@@ -129,7 +129,7 @@ endfunction
 " https://vi.stackexchange.com/a/20757/8084 https://stackoverflow.com/a/27870856/4970632
 function! s:tabline_color(code, ...) abort
   let hex = synIDattr(hlID('Normal'), a:code . '#')  " request conversion to hex
-  if empty(hex) || hex[0] !=# '#' | return | endif  " unexpected output
+  if empty(hex) || hex[0] !=# '#' | return hex | endif  " unexpected output
   let shade = a:0 ? type(a:1) ? a:1 : 0.3 : 0.0  " shade toward neutral gray
   let color = '#'  " default hex color
   for idx in range(1, 5, 2)
