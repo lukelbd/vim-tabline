@@ -117,7 +117,10 @@ function! s:queue_updates(...) abort
   let bnrs = call('s:tabline_buffers', a:000)
   let bnrs = type(bnrs) == 0 ? [bnrs] : bnrs
   for bnr in bnrs
-    let irepo = getbufvar(bnr, 'git_dir', '')
+    let irepo = FugitiveGitDir(bnr)
+    if empty(irepo)
+      let irepo = FugitiveExtractGitDir(expand('#' . bnr . ':p'))
+    endif
     if irepo ==# repo
       call setbufvar(bnr, 'tabline_repo_changed', 1)
     endif
