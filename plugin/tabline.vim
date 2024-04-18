@@ -314,15 +314,15 @@ function! s:tabline_text(...)
     if len(tabtexts) > 3 - bleft - bright
       " Truncate tabs on either side
       if tleft > 1 && tleft + 1 < tmin || tright - 1 <= tabpagenr()
-        let tleft += 1
         let idx = tabtexts[0] =~# '·' ? 1 : 0
+        let tleft += idx  " increment bounds
         let [tabfmts, tabtexts] = [tabfmts[idx:], tabtexts[idx:]]
-        let tabtexts[0] = tleft >= tabpagenr() - 1 ? '··· ' : '···'
+        let tabtexts[0] = tleft + 1 >= tabpagenr() ? '··· ' : '···'
       else
-        let tright -= 1
         let idx = tabtexts[-1] =~# '·' ? -2 : -1
+        let tright += idx + 1  " increment bounds
         let [tabfmts, tabtexts] = [tabfmts[:idx], tabtexts[:idx]]
-        let tabtexts[-1] = tright <= tabpagenr() + 1 ? ' ···' : '···'
+        let tabtexts[-1] = tright - 1 <= tabpagenr() ? ' ···' : '···'
       endif
     elseif tabtexts[idx] !=? ' · '
       " Truncate currently selected tab
