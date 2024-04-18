@@ -313,16 +313,17 @@ function! s:tabline_text(...)
     let idx = 1 - bleft
     if len(tabtexts) > 3 - bleft - bright
       " Truncate tabs on either side
-      if tleft > 1 && tleft + 1 < tmin || tright - 1 <= tabpagenr()
-        let idx = tabtexts[0] =~# '·' ? 1 : 0
-        let tleft += idx  " increment bounds
-        let [tabfmts, tabtexts] = [tabfmts[idx:], tabtexts[idx:]]
-        let tabtexts[0] = tleft + 1 >= tabpagenr() ? '··· ' : '···'
+      let space = tleft > 1 && tleft + 1 < tmin
+      if tleft + 1 < tabpagenr() && (space || tright - 1 <= tabpagenr())
+        let delta = tabtexts[0] =~# '·' ? 1 : 0
+        let tleft += delta  " increment bounds
+        let [tabfmts, tabtexts] = [tabfmts[delta:], tabtexts[delta:]]
+        let tabtexts[0] = tleft >= tabpagenr() - 1 ? '··· ' : '···'
       else
-        let idx = tabtexts[-1] =~# '·' ? -2 : -1
-        let tright += idx + 1  " increment bounds
-        let [tabfmts, tabtexts] = [tabfmts[:idx], tabtexts[:idx]]
-        let tabtexts[-1] = tright - 1 <= tabpagenr() ? ' ···' : '···'
+        let delta = tabtexts[-1] =~# '·' ? -2 : -1
+        let tright += delta + 1  " increment bounds
+        let [tabfmts, tabtexts] = [tabfmts[:delta], tabtexts[:delta]]
+        let tabtexts[-1] = tright <= tabpagenr() + 1 ? ' ···' : '···'
       endif
     elseif tabtexts[idx] !=? ' · '
       " Truncate currently selected tab
