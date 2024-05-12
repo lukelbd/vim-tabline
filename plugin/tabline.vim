@@ -1,15 +1,10 @@
 "------------------------------------------------------------------------------
-" Author: Luke Davis (lukelbd@gmail.com)
-" Date:   2018-09-03
-" A minimal, informative, black-and-white tabline that helps keep focus on the
-" content in each window and accounts for long filenames and many open tabs.
+" A minimal, informative, black-and-white tabline
 "------------------------------------------------------------------------------
-" Global settings and autocommands
-" Note: Queue flag updates whenever reading or writing buffers to generate flags before
-" gitgutter processes trigger and support simple fugitive-only version of plugin.
-" Warning: For some reason 'checktime %' does not trigger autocommand but checktime
-" without arguments does, and FileChangedShellPost causes warning message to be shown
-" even with 'silent! checktime' but FileChangedShell does not.
+" Global settings
+" Author: Luke Davis (lukelbd@gmail.com)
+" This plugin uses a simple black-and-white style that helps retain focus on the syntax
+" highlighting in your window and nicely truncates filenames and surrounding tabs.
 scriptencoding utf-8  " required for truncation symbols
 setglobal tabline=%!Tabline()
 let &g:showtabline = &showtabline ? &g:showtabline : 1
@@ -19,6 +14,13 @@ endif
 if !exists('g:tabline_skip_filetypes')  " backwards compatibility
   let g:tabline_skip_filetypes = get(g:, 'tabline_ftignore', ['diff', 'help', 'man', 'qf'])
 endif
+
+" Global autocommands
+" Note: Queue flag updates whenever reading or writing buffers to generate flags before
+" gitgutter processes trigger and support simple fugitive-only version of plugin.
+" Warning: For some reason 'checktime %' does not trigger autocommand but checktime
+" without arguments does, and FileChangedShellPost causes warning message to be shown
+" even with 'silent! checktime' but FileChangedShell does not.
 augroup tabline_update
   au!
   au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
@@ -147,8 +149,8 @@ function! s:tabline_color(code, ...) abort
 endfunction
 
 " Get primary panel in tab ignoring popups
-" Note: This skips windows containing shell commands, e.g. full-screen fzf
-" prompts, and uses the first path that isn't a skipped filetype.
+" Note: This skips windows containing shell commands, e.g. full-screen
+" fzf prompts, and uses the first path that isn't a skipped filetype.
 function! s:tabline_buffers(...) abort
   let types = get(g:, 'tabline_skip_filetypes', [])
   let tnrs = a:0 ? a:000 : range(1, tabpagenr('$'))
@@ -167,7 +169,7 @@ function! s:tabline_buffers(...) abort
       endif
     endfor
     let bnr = bnr ? bnr : alt ? alt : get(ibnrs, 0, 0)
-    for ibnr in ibnrs  " settabvar() somehow interferes with visual mode iter#scroll
+    for ibnr in ibnrs  " settabvar() somehow interferes with visual scroll
       call setbufvar(ibnr, 'tabline_bufnr', bnr)
     endfor
     call add(bnrs, bnr)
