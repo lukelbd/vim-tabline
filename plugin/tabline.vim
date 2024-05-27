@@ -5,7 +5,7 @@
 " Author: Luke Davis (lukelbd@gmail.com)
 " This plugin uses a simple black-and-white style that helps retain focus on the syntax
 " highlighting in your window and nicely truncates filenames and surrounding tabs.
-scriptencoding utf-8  " required for truncation symbols
+scriptencoding utf-8  " {{{
 setglobal tabline=%!Tabline()
 let &g:showtabline = &showtabline ? &g:showtabline : 1
 if !exists('g:tabline_maxlength')  " backwards compatibility
@@ -13,7 +13,7 @@ if !exists('g:tabline_maxlength')  " backwards compatibility
 endif
 if !exists('g:tabline_skip_filetypes')  " backwards compatibility
   let g:tabline_skip_filetypes = get(g:, 'tabline_ftignore', ['diff', 'help', 'man', 'qf'])
-endif
+endif  " }}}
 
 " Global autocommands
 " Note: Queue flag updates whenever reading or writing buffers to generate flags before
@@ -21,7 +21,7 @@ endif
 " Warning: For some reason 'checktime %' does not trigger autocommand but checktime
 " without arguments does, and FileChangedShellPost causes warning message to be shown
 " even with 'silent! checktime' but FileChangedShell does not.
-augroup tabline_update
+augroup tabline_update  " {{{
   au!
   au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
   au BufReadPost,BufWritePost * let b:tabline_file_changed = 0
@@ -32,7 +32,7 @@ augroup tabline_update
   au User GitGutterStage call s:fugitive_update('%')
   au User FugitiveChanged call s:queue_updates()
   au FocusGained * call s:queue_updates()
-augroup END
+augroup END  " }}}
 
 " Primary tabline function
 " Note: Updating gitgutter can be slow and cause display to hang so run once without
