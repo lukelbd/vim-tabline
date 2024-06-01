@@ -5,9 +5,9 @@
 " Author: Luke Davis (lukelbd@gmail.com)
 " This plugin uses a simple black-and-white style that helps retain focus on the syntax
 " highlighting in your window and nicely truncates filenames and surrounding tabs.
-if exists('g:loaded_tabline') | finish | endif
-let g:loaded_tabline = 1
-scriptencoding utf-8  " {{{
+scriptencoding utf-8
+exe exists('g:loaded_tabline') ? 'finish' : ''
+let g:loaded_tabline = 1  " {{{
 setglobal tabline=%!Tabline()
 let &g:showtabline = &showtabline ? &g:showtabline : 1
 if !exists('g:tabline_maxlength')  " backwards compatibility
