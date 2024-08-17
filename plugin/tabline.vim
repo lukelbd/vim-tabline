@@ -260,6 +260,7 @@ function! s:tabline_text(...)
   let process = a:0 ? a:1 : 0  " update gitgutter
   let bufnrs = s:tabline_buffers()  " add path if duplicates present
   let names = map(copy(bufnrs), {_, val -> expand('#' . val . ':p:t')})
+  let stack = reverse(copy(get(g:, 'tab_stack', [])))  " dotfiles utility
   while strwidth(join(tabtexts, '')) <= &columns
     " Get tab path and tab text
     if tnr >= tabpagenr('$') || tleft > tmin  " current and two to left
@@ -275,7 +276,8 @@ function! s:tabline_text(...)
       continue  " possibly more tabs to the right
     endif
     let bnr = bufnrs[tnr - 1]
-    let name = expand('#' . bnr . ':p:t')
+    let path = expand('#' . bnr . ':p')
+    let name = fnamemodify(path, ':t')
     let dups = filter(copy(names), {_, val -> val ==# name})
     let label = s:tabline_label(bnr, len(dups) > 1)
     let flags = s:tabline_flags(bnr, process)
@@ -287,9 +289,11 @@ function! s:tabline_text(...)
     elseif delta > 2
       let label = '·' . strcharpart(label, index, g:tabline_maxlength) . '·'
     endif
+    let snr = index(stack, path) + 1  " stack index
+    let head = snr > 0 ? snr . '*' : tnr . '|'  " tab index
     let group = tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
     let tabfmt = '%' . tnr . 'T' . group
-    let tabtext = ' ' . tnr . '|' . label . flags . ' '
+    let tabtext = ' ' . head . label . flags . ' '
     if rfill
       call add(tabfmts, tabfmt)
       call add(tabtexts, tabtext)
