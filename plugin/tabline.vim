@@ -25,10 +25,11 @@ endif  " }}}
 " even with 'silent! checktime' but FileChangedShell does not.
 augroup tabline_update  " {{{
   au!
-  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
-  au BufReadPost,BufWritePost * let b:tabline_file_changed = 0
-  au BufReadPost,BufWritePost,FileChangedShell * let b:tabline_repo_changed = 1
   au BufEnter,InsertEnter,TextChanged * silent! checktime
+  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_file_changed', 1)
+  au BufReadPost,BufWritePost * call setbufvar(expand('<afile>'), 'tabline_file_changed', 0)
+  au FileChangedShell * call setbufvar(expand('<afile>'), 'tabline_repo_changed', 1)
+  au BufReadPost,BufWritePost * call setbufvar(expand('<afile>'), 'tabline_repo_changed', 1)
   au BufWritePost * call s:gitgutter_update('%', 1)
   au User GitGutter call s:gitgutter_update('%')
   au User GitGutterStage call s:fugitive_update('%')
