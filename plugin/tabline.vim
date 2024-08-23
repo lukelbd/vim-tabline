@@ -291,7 +291,7 @@ function! s:tabline_text(...)
       let label = '·' . strcharpart(label, index, g:tabline_maxlength) . '·'
     endif
     let snr = index(stack, path) + 1  " stack index
-    let head = snr > 0 ? snr . '*' : tnr . '|'  " tab index
+    let head = snr > 0 ? tnr . ':' . snr . '|' : tnr . '|'  " tab index
     let group = tnr == tabpagenr() ? '%#TabLineSel#' : '%#TabLine#'
     let tabfmt = '%' . tnr . 'T' . group
     let tabtext = ' ' . head . label . flags . ' '
