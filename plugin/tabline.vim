@@ -235,10 +235,9 @@ function! s:tabline_flags(...) abort
   if staged | call add(flags, '[:]') | endif
   if changed | call add(flags, '[!]') | endif
   if changed && modified && !getbufvar(bnr, 'tabline_warnchanged', 0)
-    echohl WarningMsg
-    echo 'Warning: Modifying buffer that was changed on disk.'
-    echohl None
+    let msg = 'Warning: Modifying buffer that was changed on disk.'
     call setbufvar(bnr, 'tabline_warnchanged', 1)
+    redraw | echohl WarningMsg | echo msg | echohl None
   endif
   return empty(flags) ? '' : ' ' . join(flags, '')
 endfunction
