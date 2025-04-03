@@ -46,11 +46,11 @@ function! Tabline()
   let g:tabline_redraw = 0
   if redraw  " quickly redraw tabline without checking unstaged changes
     let tabtext = s:tabline_text(0)
-  else  " redraw tabline including unstaged changes check
+  else  " redraw tabline including queued unstaged changes
     let tabtext = s:tabline_text(1)
   endif
-  if redraw  " only happens if fugitive exists
-    call feedkeys("\<Cmd>silent! redrawtabline\<CR>", 'n')
+  if redraw && v:vim_did_enter  " trigger delayed redraw with gitgutter check
+    call timer_start(10, function('execute', ['redrawtabline']))
   endif
   return tabtext
 endfunction
